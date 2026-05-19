@@ -1,0 +1,39 @@
+# config/ekf_global.yaml
+ekf_global_node:
+  ros__parameters:
+    frequency: 10.0           # GPS is slow
+    sensor_timeout: 0.5
+    two_d_mode: true
+    publish_tf: false         # only local EKF publishes odom->base_link
+
+    odom_frame: odom
+    base_link_frame: base_link
+    world_frame: map          # global EKF lives in map frame
+
+    # Feed the local EKF output in as odometry
+    odom0: /odometry/local
+    odom0_config: [true,  true,  false,
+                   false, false, true,
+                   true,  true,  false,
+                   false, false, true,
+                   false, false, false]
+
+    # GPS — converted to odom by navsat_transform_node
+    odom1: /odometry/gps
+    odom1_config: [true,  true,  false,
+                   false, false, false,
+                   false, false, false,
+                   false, false, false,
+                   false, false, false]
+
+# navsat_transform converts raw GPS lat/lon into odom-frame XY
+navsat_transform_node:
+  ros__parameters:
+    frequency: 10.0
+    delay: 3.0
+    magnetic_declination_radians: 0.0   # look up for your location
+    yaw_offset: 0.0
+    zero_altitude: true
+    publish_filtered_gps: false
+    use_odometry_yaw: true
+    wait_for_datum: false

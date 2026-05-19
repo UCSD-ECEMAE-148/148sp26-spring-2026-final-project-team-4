@@ -1,0 +1,30 @@
+<!-- urdf/robot.urdf.xacro -->
+<robot name="my_robot" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <link name="base_link"/>
+
+  <!-- 2D LiDAR -->
+  <joint name="lidar_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="laser_frame"/>
+    <origin xyz="0.1 0.0 0.2" rpy="0 0 0"/>  <!-- adjust to your mount -->
+  </joint>
+  <link name="laser_frame"/>
+
+  <!-- OAK-D Lite -->
+  <joint name="camera_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="camera_link"/>
+    <origin xyz="0.15 0.0 0.25" rpy="0 0 0"/>
+  </joint>
+  <link name="camera_link"/>
+
+  <!-- IMU (Seeed XIAO) -->
+  <joint name="imu_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="imu_link"/>
+    <origin xyz="0.0 0.0 0.1" rpy="0 0 0"/>
+  </joint>
+  <link name="imu_link"/>
+
+</robot>
