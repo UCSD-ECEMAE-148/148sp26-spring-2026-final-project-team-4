@@ -3,7 +3,7 @@ import os
 
 from setuptools import find_packages, setup
 
-package_name = 'robot_slam'
+package_name = 'mission_bridge'
 
 
 def install_tree(source_root, destination_root):
@@ -23,14 +23,9 @@ data_files = [
     ('share/ament_index/resource_index/packages', ['resource/' + package_name]),
     ('share/' + package_name, ['package.xml']),
     (os.path.join('share', package_name, 'launch'), glob('launch/*.launch.py')),
-    (os.path.join('share', package_name, 'config'), glob('config/*.yaml')),
-    (os.path.join('share', package_name, 'rviz'), glob('rviz/*.rviz')),
-    (os.path.join('share', package_name, 'ros_data', 'maps'), glob('ros_data/maps/custom/*')),
 ]
 data_files.extend(
-    install_tree(
-        'urdf', os.path.join('share', package_name, 'urdf')
-    )
+    install_tree('resource', os.path.join('share', package_name, 'resource'))
 )
 
 setup(
@@ -42,11 +37,14 @@ setup(
     zip_safe=True,
     maintainer='evanc',
     maintainer_email='evan.chou@live.com',
-    description='SLAM and Nav2 launch package for robot_slam.',
+    description='Mission bridge nodes: image capture, path recorder, mission trigger.',
     license='Apache-2.0',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+            'image_capture_node = mission_bridge.image_capture_node:main',
+            'path_recorder_node = mission_bridge.path_recorder_node:main',
+            'mission_trigger_node = mission_bridge.mission_trigger_node:main',
         ],
     },
 )
