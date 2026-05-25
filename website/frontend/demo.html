@@ -1,0 +1,59 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mission Reporter — Demo</title>
+    <link rel="stylesheet" href="src/styles.css" />
+    <style>
+      .map-placeholder { width: 100%; height: 480px; background: linear-gradient(180deg,#f7f7f7,#e7e7e7); display:flex;align-items:center;justify-content:center;border:1px solid #ccc }
+      .img-grid { display:grid; grid-template-columns: repeat(auto-fill,minmax(160px,1fr)); gap:8px }
+      .img-grid img { width:100%; height:120px; object-fit:cover; border:1px solid #ddd }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <div class="sidebar">
+        <h3>Missions</h3>
+        <ul>
+          <li class="active">20260524_120000</li>
+          <li>20260523_154500</li>
+          <li>20260522_091234</li>
+        </ul>
+      </div>
+      <div class="content">
+        <div>
+          <div class="tabs">
+            <button class="on">Map</button>
+            <button>Images</button>
+            <button>Report</button>
+          </div>
+          <div class="panel">
+            <h4>Map</h4>
+            <div class="map-placeholder">Map preview (PNG will show here)</div>
+            <h4 style="margin-top:16px">Notable Images</h4>
+            <div class="img-grid">
+              <div><img src="https://via.placeholder.com/320x240?text=img_0001" alt="img1"><div>Score: 9 — blocked doorway</div></div>
+              <div><img src="https://via.placeholder.com/320x240?text=img_0002" alt="img2"><div>Score: 8 — stairwell</div></div>
+              <div><img src="https://via.placeholder.com/320x240?text=img_0003" alt="img3"><div>Score: 7 — large object</div></div>
+            </div>
+            <h4 style="margin-top:16px">Report</h4>
+            <div class="report">
+              ## Mission Summary
+              \n+              - Duration: 14m
+              - Distance: 47.3 m
+              \n+              ## Route Overview
+              \n+              Robot followed planned route and explored mapped area.
+              \n+              ## Notable Observations
+              \n+              - T+02:14 — Blocked doorway with debris on floor. (score:9)
+              \n+              ## Obstacles & Anomalies
+              \n+              - Debris blocking doorway near (x=1.2,y=3.4)
+              \n+              ## Recommendations
+              \n+              - Verify doorway clearance before sending personnel.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
