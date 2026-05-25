@@ -1,0 +1,3 @@
+[submodule "slam_ros2_ws/src/ucsd_robocar_hub2"]
+	path = slam_ros2_ws/src/ucsd_robocar_hub2
+	url = https://github.com/UCSD-ECEMAE-148/ucsd_robocar_hub2.git
