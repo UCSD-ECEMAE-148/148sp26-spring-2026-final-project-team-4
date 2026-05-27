@@ -10,3 +10,11 @@
 [submodule "slam_ros2_ws/src/razor_imu_9dof"]
 	path = slam_ros2_ws/src/razor_imu_9dof
 	url = https://github.com/sisaha9/razor_imu_9dof.git
+[submodule "slam_ros2_ws/src/vesc"]
+	path = slam_ros2_ws/src/vesc
+	url = https://github.com/f1tenth/vesc.git
+	branch = ros2
+[submodule "slam_ros2_ws/src/ackermann_mux"]
+	path = slam_ros2_ws/src/ackermann_mux
+	url = https://github.com/f1tenth/ackermann_mux.git
+	branch = foxy-devel
