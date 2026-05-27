@@ -22,6 +22,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+            'mission_control_node = mission_bridge.mission_control_node:main',
+            'mission_return_node = mission_bridge.mission_return_node:main',
             'image_capture_node = mission_bridge.image_capture_node:main',
             'path_recorder_node = mission_bridge.path_recorder_node:main',
             'mission_trigger_node = mission_bridge.mission_trigger_node:main',

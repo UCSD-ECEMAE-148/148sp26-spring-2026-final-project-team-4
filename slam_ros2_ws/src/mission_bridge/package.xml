@@ -12,6 +12,7 @@
   <depend>sensor_msgs</depend>
   <depend>std_srvs</depend>
   <depend>geometry_msgs</depend>
+  <depend>nav2_msgs</depend>
 
   <!-- Note: rosbridge_server/rosbridge_suite is required for WebSocket publishing from mission_trigger.
        If not installed, add system/package installation steps in the README. -->
