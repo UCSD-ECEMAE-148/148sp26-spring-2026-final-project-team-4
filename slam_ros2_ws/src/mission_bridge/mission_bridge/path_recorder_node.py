@@ -5,6 +5,7 @@ from threading import Lock
 import rclpy
 from rclpy.node import Node
 from nav_msgs.msg import Odometry
+from std_msgs.msg import Bool
 from std_srvs.srv import Trigger
 
 
@@ -12,6 +13,7 @@ class PathRecorderNode(Node):
     def __init__(self):
         super().__init__('path_recorder_node')
         self.odom_sub = self.create_subscription(Odometry, '/odom', self.odom_cb, 10)
+        self.start_sub = self.create_subscription(Bool, '/mission/started', self.start_cb, 10)
         self.timer = self.create_timer(0.5, self.sample_pose)
         self.lock = Lock()
         self.last_odom = None
@@ -40,6 +42,15 @@ class PathRecorderNode(Node):
         with self.lock:
             if self.last_odom is not None:
                 self.path.append(self.last_odom.copy())
+
+    def start_cb(self, msg: Bool):
+        if not msg.data:
+            return
+
+        with self.lock:
+            self.last_odom = None
+            self.path = []
+            self.get_logger().info('Mission start received; cleared path recorder state')
 
     def handle_flush(self, request, response):
         try:

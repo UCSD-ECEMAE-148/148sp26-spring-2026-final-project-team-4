@@ -10,7 +10,21 @@ from launch_ros.actions import Node
 def generate_launch_description():
     ld = LaunchDescription()
 
-    # Launch the three mission_bridge nodes
+    # Launch the mission_bridge nodes that record, finalize, and control a mission
+    ld.add_action(Node(
+        package='mission_bridge',
+        executable='mission_control_node',
+        name='mission_control_node',
+        output='screen',
+    ))
+
+    ld.add_action(Node(
+        package='mission_bridge',
+        executable='mission_return_node',
+        name='mission_return_node',
+        output='screen',
+    ))
+
     ld.add_action(Node(
         package='mission_bridge',
         executable='image_capture_node',

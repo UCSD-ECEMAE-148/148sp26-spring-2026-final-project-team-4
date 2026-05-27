@@ -7,6 +7,8 @@ export default function App() {
   const [missions, setMissions] = useState([])
   const [selected, setSelected] = useState(null)
   const [tab, setTab] = useState('map')
+  const [missionState, setMissionState] = useState('idle')
+  const [bridgeReady, setBridgeReady] = useState(false)
 
   useEffect(() => {
     fetch('/api/missions').then(r => r.json()).then(d => setMissions(d.missions || []))
@@ -21,10 +23,37 @@ export default function App() {
     return () => ws.close()
   }, [])
 
+  useEffect(() => {
+    const ws = new WebSocket('ws://localhost:9090')
+    ws.onopen = () => setBridgeReady(true)
+    ws.onclose = () => setBridgeReady(false)
+    ws.onerror = () => setBridgeReady(false)
+    return () => ws.close()
+  }, [])
+
+  const publishMissionCommand = (command) => {
+    const ws = new WebSocket('ws://localhost:9090')
+    ws.onopen = () => {
+      ws.send(JSON.stringify({
+        op: 'publish',
+        topic: '/mission/control',
+        msg: { data: command },
+      }))
+      setMissionState(command === 'start' ? 'started' : 'returning')
+      ws.close()
+    }
+    ws.onerror = () => setBridgeReady(false)
+  }
+
   return (
     <div className="app">
       <div className="sidebar">
         <h3>Missions</h3>
+        <div className="mission-controls">
+          <button className="primary" onClick={() => publishMissionCommand('start')} disabled={!bridgeReady}>Start</button>
+          <button className="danger" onClick={() => publishMissionCommand('end')} disabled={!bridgeReady}>End</button>
+        </div>
+        <div className="mission-state">Mission: {missionState}</div>
         <ul>
           {missions.map(m => (
             <li key={m} onClick={() => setSelected(m)} className={selected===m? 'active':''}>{m}</li>

@@ -7,6 +7,7 @@ import rclpy
 from rclpy.node import Node
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import CompressedImage
+from std_msgs.msg import Bool
 
 
 def _quat_to_yaw(qx, qy, qz, qw):
@@ -22,6 +23,7 @@ class ImageCaptureNode(Node):
 
         self.odom_sub = self.create_subscription(Odometry, '/odom', self.odom_cb, 10)
         self.image_sub = self.create_subscription(CompressedImage, '/camera/image_raw/compressed', self.image_cb, 10)
+        self.start_sub = self.create_subscription(Bool, '/mission/started', self.start_cb, 10)
         self.pub = self.create_publisher(CompressedImage, '/mission/images', 10)
 
         self.lock = Lock()
@@ -40,6 +42,17 @@ class ImageCaptureNode(Node):
                     self.counter = len(self.manifest)
             except Exception:
                 self.get_logger().warning('Failed to load existing manifest.json')
+
+    def start_cb(self, msg: Bool):
+        if not msg.data:
+            return
+
+        with self.lock:
+            self.last_capture_pose = None
+            self.counter = 0
+            self.manifest = []
+            os.makedirs(self.images_dir, exist_ok=True)
+            self.get_logger().info('Mission start received; cleared image capture state')
 
     def odom_cb(self, msg: Odometry):
         with self.lock:
