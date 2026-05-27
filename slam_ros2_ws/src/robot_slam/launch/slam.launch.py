@@ -3,6 +3,7 @@ import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
@@ -21,9 +22,11 @@ def _nav2_node(package_name, executable_name, node_name, params_file, use_sim_ti
 def generate_launch_description():
     pkg = get_package_share_directory('robot_slam')
     slam_toolbox_pkg = get_package_share_directory('slam_toolbox')
+    sensor_pkg = get_package_share_directory('ucsd_robocar_sensor2_pkg')
 
     use_sim_time = LaunchConfiguration('use_sim_time')
     autostart = LaunchConfiguration('autostart')
+    use_rviz = LaunchConfiguration('use_rviz')
     params_file = LaunchConfiguration('params_file')
     slam_params_file = LaunchConfiguration('slam_params_file')
     rviz_config = LaunchConfiguration('rviz_config')
@@ -38,6 +41,11 @@ def generate_launch_description():
             'autostart',
             default_value='true',
             description='Automatically start the Nav2 lifecycle stack',
+        ),
+        DeclareLaunchArgument(
+            'use_rviz',
+            default_value='false',
+            description='Launch RViz with the mapping layout',
         ),
         DeclareLaunchArgument(
             'params_file',
@@ -66,6 +74,12 @@ def generate_launch_description():
                 },
                 {'use_sim_time': use_sim_time},
             ],
+        ),
+
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(
+                os.path.join(sensor_pkg, 'launch', 'imu_artemis.launch.py')
+            ),
         ),
 
         Node(
@@ -126,5 +140,6 @@ def generate_launch_description():
             arguments=['-d', rviz_config],
             parameters=[{'use_sim_time': use_sim_time}],
             output='screen',
+            condition=IfCondition(use_rviz),
         ),
     ])

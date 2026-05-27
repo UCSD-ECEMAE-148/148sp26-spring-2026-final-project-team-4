@@ -40,16 +40,22 @@ source install/setup.bash
 
 - Stage 1 (Mapping): [launch/slam.launch.py](launch/slam.launch.py)
 
-  Starts robot description, local EKF, SLAM Toolbox (online async), Nav2 servers, lifecycle manager and RViz configured for mapping. Run:
+  Starts robot description, local EKF, SLAM Toolbox (online async), Nav2 servers and lifecycle manager. RViz is optional so the launch can run headless by default. Run:
 
   ```bash
   ros2 launch robot_slam slam.launch.py
   ```
 
+  To open RViz from the launch, pass:
+
+  ```bash
+  ros2 launch robot_slam slam.launch.py use_rviz:=true
+  ```
+
   Optional overrides:
 
   ```bash
-  ros2 launch robot_slam slam.launch.py slam_params_file:=/path/to/slam_toolbox.yaml rviz_config:=/path/to/mapping.rviz
+  ros2 launch robot_slam slam.launch.py slam_params_file:=/path/to/slam_toolbox.yaml rviz_config:=/path/to/mapping.rviz use_rviz:=true
   ```
 
 - Stage 2 (Localization & Navigation): [launch/localization.launch.py](launch/localization.launch.py)

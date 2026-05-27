@@ -7,6 +7,13 @@ This document shows how to test the ROS 2 packages in this workspace in two stag
 
 The commands below assume you are in the workspace root and have sourced the correct ROS 2 setup for your distro.
 
+**Before doing any ROS 2 operations, make sure to run the command to activate ROS 2**
+
+```
+source /opt/ros/jazzy/setup.bash
+ros2
+```
+
 ## 1. Build and source the workspace
 
 Build the workspace after making changes:
@@ -62,7 +69,15 @@ ros2 topic echo /camera/image_raw/compressed --once
 
 ### IMU
 
-Launch the IMU driver from the same sensor package:
+The current IMU hardware is the Seeed Technology Co., Ltd. Seeed XIAO nRF52840 Sense. The launch path in this repo is still the same sensor package, but the launch file name is legacy:
+
+Before testing on ROS Jazzy, install the driver dependency once:
+
+```bash
+sudo apt install ros-jazzy-tf-transformations
+```
+
+If `razor_imu_9dof` is not already in your workspace, clone and build it from source using the same branch the Dockerfile expects.
 
 ```bash
 ros2 launch ucsd_robocar_sensor2_pkg imu_artemis.launch.py
@@ -75,7 +90,7 @@ ros2 topic list | grep imu
 ros2 topic echo /imu --once
 ```
 
-If your IMU driver uses a different topic name, confirm it with `ros2 topic list` and inspect the launch file for the exact remap.
+If the board shows up on a different serial device than the default in [my_razor.yaml](../slam_ros2_ws/src/ucsd_robocar_hub2/ucsd_robocar_sensor2_pkg/config/my_razor.yaml), update the `port` entry before testing. If your IMU driver uses a different topic name, confirm it with `ros2 topic list` and inspect the launch file for the exact remap.
 
 ### LiDAR
 
