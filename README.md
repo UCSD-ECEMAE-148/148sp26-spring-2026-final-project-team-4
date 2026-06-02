@@ -42,6 +42,7 @@ TBD
 
 - [Project Reproduction guide](docs/reproduction.md) if you are interested in reproducing our project.
 - [ROS 2 testing guide](docs/ros2_testing.md) for camera, IMU, LiDAR, and SLAM/RViz2 checks.
+- [Full Stage 1 + Stage 2 testing guide](docs/full_stage_testing.md) for mapping, localization/navigation, and mission data transfer to the website backend.
 - [Software Systems documentation](docs/software_systems.md) for learning about our software architectures and systems.
 - [Robot Hardware documentation](docs/robot_hardware.md) for learning about our improved hardware components, including electrical and mechanical revamps.
 

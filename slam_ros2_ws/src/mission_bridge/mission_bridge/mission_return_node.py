@@ -1,16 +1,25 @@
-import math
-
 import rclpy
 from rclpy.action import ActionClient
 from rclpy.node import Node
 from geometry_msgs.msg import PoseStamped, PoseWithCovarianceStamped
 from nav2_msgs.action import NavigateToPose
 from std_msgs.msg import Bool, String
+from tf2_ros import Buffer, TransformException, TransformListener
 
 
 class MissionReturnNode(Node):
     def __init__(self):
         super().__init__('mission_return_node')
+        self.declare_parameter('map_frame', 'map')
+        self.declare_parameter('odom_frame', 'odom')
+        self.declare_parameter('base_frame', 'base_link')
+        self.declare_parameter('capture_timeout_s', 5.0)
+
+        self.map_frame = str(self.get_parameter('map_frame').value)
+        self.odom_frame = str(self.get_parameter('odom_frame').value)
+        self.base_frame = str(self.get_parameter('base_frame').value)
+        self.capture_timeout_s = float(self.get_parameter('capture_timeout_s').value)
+
         self.start_pose_sub = self.create_subscription(
             PoseWithCovarianceStamped,
             '/amcl_pose',
@@ -22,9 +31,13 @@ class MissionReturnNode(Node):
         self.complete_pub = self.create_publisher(Bool, '/mission/complete', 10)
         self.state_pub = self.create_publisher(String, '/mission/state', 10)
         self.nav_client = ActionClient(self, NavigateToPose, 'navigate_to_pose')
+        self.tf_buffer = Buffer()
+        self.tf_listener = TransformListener(self.tf_buffer, self)
         self.start_pose = None
         self.capture_start_pose = False
+        self.capture_requested_time = None
         self.return_in_progress = False
+        self.capture_timer = self.create_timer(0.2, self.capture_timer_cb)
 
     def _publish_state(self, state: str):
         msg = String()
@@ -40,7 +53,27 @@ class MissionReturnNode(Node):
         if msg.data:
             self.start_pose = None
             self.capture_start_pose = True
+            self.capture_requested_time = self.get_clock().now()
             self.return_in_progress = False
+            self.get_logger().info('Mission started; capturing start pose (AMCL or TF fallback)')
+
+    def capture_timer_cb(self):
+        if not self.capture_start_pose or self.start_pose is not None:
+            return
+
+        if self.capture_requested_time is not None:
+            elapsed = (self.get_clock().now() - self.capture_requested_time).nanoseconds / 1e9
+            if elapsed > self.capture_timeout_s:
+                self.capture_start_pose = False
+                self.get_logger().warning('Timed out capturing start pose from AMCL/TF')
+                return
+
+        self._try_capture_from_tf(self.map_frame)
+        if self.start_pose is not None:
+            return
+
+        # Fallback for Stage 1 when map frame is still unstable; less accurate due to drift.
+        self._try_capture_from_tf(self.odom_frame, warn=True)
 
     def start_pose_cb(self, msg: PoseWithCovarianceStamped):
         if not self.capture_start_pose:
@@ -50,7 +83,30 @@ class MissionReturnNode(Node):
         self.start_pose.header = msg.header
         self.start_pose.pose = msg.pose.pose
         self.capture_start_pose = False
+        self.capture_requested_time = None
         self.get_logger().info('Captured mission start pose from /amcl_pose')
+
+    def _try_capture_from_tf(self, frame_id: str, warn: bool = False):
+        try:
+            tf = self.tf_buffer.lookup_transform(frame_id, self.base_frame, rclpy.time.Time())
+        except TransformException:
+            return
+
+        pose = PoseStamped()
+        pose.header.frame_id = frame_id
+        pose.header.stamp = tf.header.stamp
+        pose.pose.position.x = tf.transform.translation.x
+        pose.pose.position.y = tf.transform.translation.y
+        pose.pose.position.z = tf.transform.translation.z
+        pose.pose.orientation = tf.transform.rotation
+
+        self.start_pose = pose
+        self.capture_start_pose = False
+        self.capture_requested_time = None
+        if warn:
+            self.get_logger().warning(f'Captured mission start pose from TF {frame_id}->{self.base_frame} (fallback)')
+        else:
+            self.get_logger().info(f'Captured mission start pose from TF {frame_id}->{self.base_frame}')
 
     def command_cb(self, msg: String):
         if msg.data.strip().lower() != 'end':
