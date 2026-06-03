@@ -6,10 +6,10 @@
   <!-- 2D LiDAR -->
   <joint name="lidar_joint" type="fixed">
     <parent link="base_link"/>
-    <child link="laser_frame"/>
-    <origin xyz="0.1 0.0 0.2" rpy="0 0 0"/>  <!-- adjust to your mount -->
+    <child link="laser"/>
+    <origin xyz="0.1 0.0 0.2" rpy="0 0 0"/>
   </joint>
-  <link name="laser_frame"/>
+  <link name="laser"/>
 
   <!-- OAK-D Lite -->
   <joint name="camera_joint" type="fixed">
@@ -22,9 +22,9 @@
   <!-- IMU (Seeed XIAO) -->
   <joint name="imu_joint" type="fixed">
     <parent link="base_link"/>
-    <child link="imu_link"/>
+    <child link="base_imu_link"/>
     <origin xyz="0.0 0.0 0.1" rpy="0 0 0"/>
   </joint>
-  <link name="imu_link"/>
+  <link name="base_imu_link"/>
 
 </robot>

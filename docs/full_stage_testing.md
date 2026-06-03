@@ -41,7 +41,7 @@ If your hardware uses a different camera or LiDAR, pick the matching launch file
 In a separate terminal:
 
 ```bash
-source /opt/ros/humble/setup.bash
+source /opt/ros/jazzy/setup.bash
 cd slam_ros2_ws
 source install/setup.bash
 ros2 launch robot_slam launch_stage_1.launch.py use_rviz:=true

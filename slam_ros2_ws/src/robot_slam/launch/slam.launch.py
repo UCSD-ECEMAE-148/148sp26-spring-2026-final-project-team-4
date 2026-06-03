@@ -22,7 +22,6 @@ def _nav2_node(package_name, executable_name, node_name, params_file, use_sim_ti
 def generate_launch_description():
     pkg = get_package_share_directory('robot_slam')
     slam_toolbox_pkg = get_package_share_directory('slam_toolbox')
-    sensor_pkg = get_package_share_directory('ucsd_robocar_sensor2_pkg')
 
     use_sim_time = LaunchConfiguration('use_sim_time')
     autostart = LaunchConfiguration('autostart')
@@ -74,23 +73,6 @@ def generate_launch_description():
                 },
                 {'use_sim_time': use_sim_time},
             ],
-        ),
-
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(
-                os.path.join(sensor_pkg, 'launch', 'imu_artemis.launch.py')
-            ),
-        ),
-
-        Node(
-            package='robot_localization',
-            executable='ekf_node',
-            name='ekf_local_node',
-            parameters=[
-                os.path.join(pkg, 'config', 'ekf_local.yaml'),
-                {'use_sim_time': use_sim_time},
-            ],
-            remappings=[('odometry/filtered', 'odometry/local')],
         ),
 
         IncludeLaunchDescription(

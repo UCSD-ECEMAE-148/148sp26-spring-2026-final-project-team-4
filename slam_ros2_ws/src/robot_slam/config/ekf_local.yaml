@@ -10,13 +10,13 @@ ekf_local_node:
     base_link_frame: base_link
     world_frame: odom         # local EKF lives in odom frame
 
-    # IMU — provides orientation + angular velocity + linear acceleration
+    # IMU — provides orientation + angular velocity only (no acceleration to avoid control conflict)
     imu0: /imu
     imu0_config: [false, false, false,   # x, y, z position
                   true,  true,  true,    # roll, pitch, yaw
                   false, false, false,   # vx, vy, vz
                   true,  true,  true,    # vroll, vpitch, vyaw
-                  true,  true,  true]    # ax, ay, az
+                  false, false, false]   # ax, ay, az
     imu0_differential: false
     imu0_remove_gravitational_acceleration: true
 
@@ -28,5 +28,3 @@ ekf_local_node:
     deceleration_limits: [1.3, 0.0, 0.0, 0.0, 0.0, 4.5]
     acceleration_gains: [0.8, 0.0, 0.0, 0.0, 0.0, 0.9]
     deceleration_gains: [1.0, 0.0, 0.0, 0.0, 0.0, 1.0]
-
-    odom0_differential: false
