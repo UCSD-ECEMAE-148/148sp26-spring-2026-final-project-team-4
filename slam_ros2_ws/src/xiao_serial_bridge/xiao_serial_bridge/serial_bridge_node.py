@@ -1,0 +1,174 @@
+import math
+import queue
+import threading
+
+import rclpy
+from rclpy.node import Node
+from geometry_msgs.msg import TransformStamped
+from nav_msgs.msg import Odometry
+from sensor_msgs.msg import Imu
+from tf2_ros import TransformBroadcaster
+
+try:
+    import serial
+except ImportError:
+    raise ImportError("pyserial is required: pip install pyserial")
+
+# CSV field indices
+_SEQ = 0
+_TS = 1
+_AX, _AY, _AZ = 2, 3, 4
+_GX, _GY, _GZ = 5, 6, 7
+_X, _Y, _THETA = 8, 9, 10
+_VX, _VTHETA = 11, 12
+_EXPECTED_FIELDS = 13
+
+_POSE_COV = [0.0] * 36
+_POSE_COV[0] = 0.05   # x
+_POSE_COV[7] = 0.05   # y
+_POSE_COV[35] = 0.02  # yaw
+
+_TWIST_COV = [0.0] * 36
+_TWIST_COV[0] = 0.01   # vx
+_TWIST_COV[35] = 0.01  # vtheta
+
+
+class SerialBridgeNode(Node):
+    def __init__(self):
+        super().__init__('serial_bridge_node')
+
+        self.declare_parameter('serial_port', '/dev/ttyACM0')
+        self.declare_parameter('baud_rate', 115200)
+        self.declare_parameter('odom_frame_id', 'odom')
+        self.declare_parameter('base_frame_id', 'base_link')
+        self.declare_parameter('publish_tf', True)
+
+        self._port = self.get_parameter('serial_port').get_parameter_value().string_value
+        self._baud = self.get_parameter('baud_rate').get_parameter_value().integer_value
+        self._odom_frame = self.get_parameter('odom_frame_id').get_parameter_value().string_value
+        self._base_frame = self.get_parameter('base_frame_id').get_parameter_value().string_value
+        self._publish_tf = self.get_parameter('publish_tf').get_parameter_value().bool_value
+
+        self._odom_pub = self.create_publisher(Odometry, '/odom', 10)
+        self._imu_pub = self.create_publisher(Imu, '/imu', 10)
+        if self._publish_tf:
+            self._tf_broadcaster = TransformBroadcaster(self)
+
+        self._pkt_queue: queue.Queue = queue.Queue()
+        self._serial_thread = threading.Thread(target=self._read_serial, daemon=True)
+        self._serial_thread.start()
+
+        # 50 Hz timer — matches firmware output rate
+        self.create_timer(0.02, self._publish_cb)
+        self.get_logger().info(f'serial_bridge_node started on {self._port}')
+
+    def _open_serial(self):
+        import time
+        while rclpy.ok():
+            try:
+                ser = serial.Serial(self._port, self._baud, timeout=1.0)
+                self.get_logger().info(f'Opened serial port {self._port}')
+                return ser
+            except serial.SerialException as e:
+                self.get_logger().warning(f'Serial open failed ({e}), retrying in 3 s…')
+                time.sleep(3.0)
+
+    def _read_serial(self):
+        ser = self._open_serial()
+        while rclpy.ok():
+            try:
+                raw = ser.readline()
+            except serial.SerialException as e:
+                self.get_logger().warning(f'Serial read error: {e} — reopening port')
+                ser.close()
+                ser = self._open_serial()
+                continue
+
+            line = raw.decode('ascii', errors='replace').strip()
+            if not line:
+                continue
+            parts = line.split(',')
+            if len(parts) != _EXPECTED_FIELDS:
+                self.get_logger().warning(f'Unexpected field count ({len(parts)}): {line!r}')
+                continue
+            try:
+                fields = [float(p) for p in parts]
+            except ValueError:
+                self.get_logger().warning(f'Failed to parse packet: {line!r}')
+                continue
+            self._pkt_queue.put(fields)
+
+    def _publish_cb(self):
+        if self._pkt_queue.empty():
+            return
+        # drain; use the latest packet
+        fields = None
+        while not self._pkt_queue.empty():
+            fields = self._pkt_queue.get_nowait()
+        if fields is None:
+            return
+
+        now = self.get_clock().now().to_msg()
+
+        theta = fields[_THETA]
+        qz = math.sin(theta / 2.0)
+        qw = math.cos(theta / 2.0)
+
+        odom = Odometry()
+        odom.header.stamp = now
+        odom.header.frame_id = self._odom_frame
+        odom.child_frame_id = self._base_frame
+        odom.pose.pose.position.x = fields[_X]
+        odom.pose.pose.position.y = fields[_Y]
+        odom.pose.pose.orientation.z = qz
+        odom.pose.pose.orientation.w = qw
+        odom.twist.twist.linear.x = fields[_VX]
+        odom.twist.twist.angular.z = fields[_VTHETA]
+        odom.pose.covariance = _POSE_COV
+        odom.twist.covariance = _TWIST_COV
+        self._odom_pub.publish(odom)
+
+        imu_msg = Imu()
+        imu_msg.header.stamp = now
+        imu_msg.header.frame_id = self._base_frame
+        imu_msg.linear_acceleration.x = fields[_AX]
+        imu_msg.linear_acceleration.y = fields[_AY]
+        imu_msg.linear_acceleration.z = fields[_AZ]
+        imu_msg.angular_velocity.x = fields[_GX]
+        imu_msg.angular_velocity.y = fields[_GY]
+        imu_msg.angular_velocity.z = fields[_GZ]
+        imu_msg.orientation.z = qz
+        imu_msg.orientation.w = qw
+        imu_msg.orientation_covariance[8] = 0.02
+        imu_msg.angular_velocity_covariance[8] = 0.01
+        imu_msg.linear_acceleration_covariance[0] = 0.1
+        imu_msg.linear_acceleration_covariance[4] = 0.1
+        imu_msg.linear_acceleration_covariance[8] = 0.1
+        self._imu_pub.publish(imu_msg)
+
+        if self._publish_tf:
+            t = TransformStamped()
+            t.header.stamp = now
+            t.header.frame_id = self._odom_frame
+            t.child_frame_id = self._base_frame
+            t.transform.translation.x = fields[_X]
+            t.transform.translation.y = fields[_Y]
+            t.transform.rotation.z = qz
+            t.transform.rotation.w = qw
+            self._tf_broadcaster.sendTransform(t)
+
+
+def main(args=None):
+    rclpy.init(args=args)
+    node = SerialBridgeNode()
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+
+if __name__ == '__main__':
+    main()

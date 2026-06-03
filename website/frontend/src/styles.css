@@ -1,0 +1,21 @@
+body { font-family: Arial, sans-serif; margin: 0; background: linear-gradient(135deg, #10131a, #171c27 45%, #0f1117); color: #ecf2ff; }
+.app { display: flex; min-height: 100vh; }
+.sidebar { width: 260px; border-right: 1px solid rgba(255,255,255,0.08); padding: 16px; overflow:auto; background: rgba(7,10,16,0.65); backdrop-filter: blur(12px); }
+.content { flex: 1; padding: 16px; overflow:auto; }
+.sidebar ul { list-style: none; padding: 0; margin: 16px 0 0; }
+.sidebar li { padding: 10px 12px; cursor: pointer; border-radius: 10px; margin-bottom: 8px; background: rgba(255,255,255,0.04); }
+.sidebar li.active { background: rgba(74, 197, 255, 0.18); }
+.tabs button, .mission-controls button { margin-right: 8px; border: 0; border-radius: 999px; padding: 10px 14px; cursor: pointer; }
+.tabs button { background: rgba(255,255,255,0.1); color: inherit; }
+.tabs button.on { background: #4ac5ff; color: #091018; }
+.mission-controls { display: flex; gap: 8px; margin: 10px 0; }
+.mission-controls .primary { background: #6ae38a; color: #07130b; }
+.mission-controls .danger { background: #ff7b7b; color: #230707; }
+.mission-controls button:disabled { opacity: 0.45; cursor: not-allowed; }
+.mission-state { font-size: 0.9rem; color: #b7c3d9; margin: 8px 0 0; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px }
+.card { border: 1px solid rgba(255,255,255,0.08); padding: 6px; border-radius: 12px; background: rgba(255,255,255,0.03); }
+.card img { width: 100%; height: 120px; object-fit: cover }
+.placeholder { color: #9ca8bb }
+.panel { margin-top: 12px; }
+.report { white-space: pre-wrap }

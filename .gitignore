@@ -1,13 +1,31 @@
-slam_ros2_ws/src/ucsd_robocar_nav2_pkg/ros_data/
+env/
+.env
+.venv/
 
-# platformIO
-.pio/
-**/.pio/
+# Python packaging
+build/
+dist/
+*.egg-info/
+pip-wheel-metadata/
+
+# Node
+node_modules/
+website/frontend/node_modules/
+dist/
+
+# ROS / colcon build artifacts and logs
+slam_ros2_ws/build/
+slam_ros2_ws/install/
+slam_ros2_ws/log/
+**/build/
+**/install/
+**/log/
+
+# Editor/OS files
 .vscode/
-**/.vscode/
+.DS_Store
+*.swp
 
-# Next.js
-mission_report/node_modules/
-mission_report/.next/
-
-sync_firmware_from_windows.sh
+# Misc
+*.log
+>>>>>>> origin/main
