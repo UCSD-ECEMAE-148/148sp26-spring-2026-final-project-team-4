@@ -9,3 +9,5 @@ slam_ros2_ws/src/ucsd_robocar_nav2_pkg/ros_data/
 # Next.js
 mission_report/node_modules/
 mission_report/.next/
+
+sync_firmware_from_windows.sh
