@@ -1,1 +1,11 @@
 slam_ros2_ws/src/ucsd_robocar_nav2_pkg/ros_data/
+
+# platformIO
+.pio/
+**/.pio/
+.vscode/
+**/.vscode/
+
+# Next.js
+mission_report/node_modules/
+mission_report/.next/
