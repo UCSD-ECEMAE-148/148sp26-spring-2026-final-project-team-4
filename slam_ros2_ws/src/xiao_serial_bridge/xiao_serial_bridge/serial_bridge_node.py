@@ -62,41 +62,74 @@ class SerialBridgeNode(Node):
         self.create_timer(0.02, self._publish_cb)
         self.get_logger().info(f'serial_bridge_node started on {self._port}')
 
+    def _find_xiao_port(self):
+        from serial.tools import list_ports
+        for p in list_ports.comports():
+            if p.vid == 0x2886 and p.pid == 0x8045:
+                return p.device
+        return None
+
     def _open_serial(self):
-        import time
+        import time, os
         while rclpy.ok():
+            port = self._port
+            if not os.path.exists(port):
+                detected = self._find_xiao_port()
+                if detected:
+                    self.get_logger().info(f'{port} not found — auto-detected XIAO on {detected}')
+                    port = detected
             try:
-                ser = serial.Serial(self._port, self._baud, timeout=1.0)
-                self.get_logger().info(f'Opened serial port {self._port}')
+                ser = serial.Serial(port, self._baud, timeout=1.0)
+                time.sleep(0.1)
+                ser.reset_input_buffer()
+                self.get_logger().info(f'Opened serial port {port}')
                 return ser
             except serial.SerialException as e:
-                self.get_logger().warning(f'Serial open failed ({e}), retrying in 3 s…')
+                detected = self._find_xiao_port()
+                if detected and detected != port:
+                    self.get_logger().warning(f'Open failed on {port}, XIAO detected on {detected}, retrying…')
+                else:
+                    self.get_logger().warning(f'Serial open failed ({e}), retrying in 3 s…')
                 time.sleep(3.0)
 
     def _read_serial(self):
+        import time
         ser = self._open_serial()
+        buf = b''
         while rclpy.ok():
             try:
-                raw = ser.readline()
+                # Drain all buffered bytes at once to avoid readline() starvation under load
+                waiting = ser.in_waiting
+                chunk = ser.read(waiting if waiting > 0 else 1)
             except serial.SerialException as e:
+                if 'returned no data' in str(e):
+                    continue
                 self.get_logger().warning(f'Serial read error: {e} — reopening port')
                 ser.close()
+                time.sleep(2.0)
                 ser = self._open_serial()
+                buf = b''
                 continue
 
-            line = raw.decode('ascii', errors='replace').strip()
-            if not line:
+            if not chunk:
                 continue
-            parts = line.split(',')
-            if len(parts) != _EXPECTED_FIELDS:
-                self.get_logger().warning(f'Unexpected field count ({len(parts)}): {line!r}')
-                continue
-            try:
-                fields = [float(p) for p in parts]
-            except ValueError:
-                self.get_logger().warning(f'Failed to parse packet: {line!r}')
-                continue
-            self._pkt_queue.put(fields)
+
+            buf += chunk
+            *lines, buf = buf.split(b'\n')
+            for raw in lines:
+                line = raw.decode('ascii', errors='replace').strip()
+                if not line:
+                    continue
+                parts = line.split(',')
+                if len(parts) != _EXPECTED_FIELDS:
+                    self.get_logger().warning(f'Unexpected field count ({len(parts)}): {line!r}')
+                    continue
+                try:
+                    fields = [float(p) for p in parts]
+                except ValueError:
+                    self.get_logger().warning(f'Failed to parse packet: {line!r}')
+                    continue
+                self._pkt_queue.put(fields)
 
     def _publish_cb(self):
         if self._pkt_queue.empty():

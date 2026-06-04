@@ -1,8 +1,8 @@
 # config/ekf_local.yaml
 ekf_local_node:
   ros__parameters:
-    frequency: 50.0
-    sensor_timeout: 0.1
+    frequency: 10.0
+    sensor_timeout: 0.3
     two_d_mode: true          # planar robot, ignore roll/pitch/z
     publish_tf: true
 
@@ -10,12 +10,21 @@ ekf_local_node:
     base_link_frame: base_link
     world_frame: odom         # local EKF lives in odom frame
 
-    # IMU — provides orientation + angular velocity only (no acceleration to avoid control conflict)
+    # XIAO dead-reckoning — vx from accelerometer integration is too noisy; only trust yaw rate
+    odom0: /odom
+    odom0_config: [false, false, false,
+                   false, false, false,
+                   false, false, false,
+                   false, false, true,
+                   false, false, false]
+    odom0_differential: false
+
+    # IMU — only fuse yaw rate (gyro Z); absolute orientation accumulates to hundreds of radians
     imu0: /imu
     imu0_config: [false, false, false,   # x, y, z position
-                  true,  true,  true,    # roll, pitch, yaw
+                  false, false, false,   # roll, pitch, yaw (accumulated — unreliable)
                   false, false, false,   # vx, vy, vz
-                  true,  true,  true,    # vroll, vpitch, vyaw
+                  false, false, true,    # vyaw only
                   false, false, false]   # ax, ay, az
     imu0_differential: false
     imu0_remove_gravitational_acceleration: true

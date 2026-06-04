@@ -9,13 +9,18 @@ from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
 
-def _nav2_node(package_name, executable_name, node_name, params_file, use_sim_time):
+def _ekf_params_file(pkg):
+    return os.path.join(pkg, 'config', 'ekf_local.yaml')
+
+
+def _nav2_node(package_name, executable_name, node_name, params_file, use_sim_time, condition=None):
     return Node(
         package=package_name,
         executable=executable_name,
         name=node_name,
         output='screen',
         parameters=[params_file, {'use_sim_time': use_sim_time}],
+        condition=condition,
     )
 
 
@@ -26,6 +31,7 @@ def generate_launch_description():
     use_sim_time = LaunchConfiguration('use_sim_time')
     autostart = LaunchConfiguration('autostart')
     use_rviz = LaunchConfiguration('use_rviz')
+    use_nav2 = LaunchConfiguration('use_nav2')
     params_file = LaunchConfiguration('params_file')
     slam_params_file = LaunchConfiguration('slam_params_file')
     rviz_config = LaunchConfiguration('rviz_config')
@@ -47,6 +53,11 @@ def generate_launch_description():
             description='Launch RViz with the mapping layout',
         ),
         DeclareLaunchArgument(
+            'use_nav2',
+            default_value='false',
+            description='Launch the Nav2 stack (controller, planner, etc). Not needed for Stage 1 mapping.',
+        ),
+        DeclareLaunchArgument(
             'params_file',
             default_value=os.path.join(pkg, 'config', 'nav2_params.yaml'),
             description='ROS 2 parameters file for the Nav2 stack',
@@ -60,6 +71,23 @@ def generate_launch_description():
             'rviz_config',
             default_value=os.path.join(pkg, 'rviz', 'mapping.rviz'),
             description='Path to the RViz config file',
+        ),
+
+        # Always-on: state publisher, EKF, scan relay, SLAM
+        Node(
+            package='xiao_serial_bridge',
+            executable='scan_relay_node',
+            name='scan_relay_node',
+            output='screen',
+            parameters=[{'target_beams': 450}],
+        ),
+
+        Node(
+            package='robot_localization',
+            executable='ekf_node',
+            name='ekf_local_node',
+            output='screen',
+            parameters=[_ekf_params_file(pkg), {'use_sim_time': use_sim_time}],
         ),
 
         Node(
@@ -87,13 +115,21 @@ def generate_launch_description():
             }.items(),
         ),
 
-        _nav2_node('nav2_controller', 'controller_server', 'controller_server', params_file, use_sim_time),
-        _nav2_node('nav2_planner', 'planner_server', 'planner_server', params_file, use_sim_time),
-        _nav2_node('nav2_smoother', 'smoother_server', 'smoother_server', params_file, use_sim_time),
-        _nav2_node('nav2_behaviors', 'behavior_server', 'behavior_server', params_file, use_sim_time),
-        _nav2_node('nav2_bt_navigator', 'bt_navigator', 'bt_navigator', params_file, use_sim_time),
-        _nav2_node('nav2_waypoint_follower', 'waypoint_follower', 'waypoint_follower', params_file, use_sim_time),
-        _nav2_node('nav2_velocity_smoother', 'velocity_smoother', 'velocity_smoother', params_file, use_sim_time),
+        # Nav2 stack — only started when use_nav2:=true
+        _nav2_node('nav2_controller', 'controller_server', 'controller_server', params_file, use_sim_time,
+                   condition=IfCondition(use_nav2)),
+        _nav2_node('nav2_planner', 'planner_server', 'planner_server', params_file, use_sim_time,
+                   condition=IfCondition(use_nav2)),
+        _nav2_node('nav2_smoother', 'smoother_server', 'smoother_server', params_file, use_sim_time,
+                   condition=IfCondition(use_nav2)),
+        _nav2_node('nav2_behaviors', 'behavior_server', 'behavior_server', params_file, use_sim_time,
+                   condition=IfCondition(use_nav2)),
+        _nav2_node('nav2_bt_navigator', 'bt_navigator', 'bt_navigator', params_file, use_sim_time,
+                   condition=IfCondition(use_nav2)),
+        _nav2_node('nav2_waypoint_follower', 'waypoint_follower', 'waypoint_follower', params_file, use_sim_time,
+                   condition=IfCondition(use_nav2)),
+        _nav2_node('nav2_velocity_smoother', 'velocity_smoother', 'velocity_smoother', params_file, use_sim_time,
+                   condition=IfCondition(use_nav2)),
 
         Node(
             package='nav2_lifecycle_manager',
@@ -113,6 +149,7 @@ def generate_launch_description():
                     'velocity_smoother',
                 ],
             }],
+            condition=IfCondition(use_nav2),
         ),
 
         Node(
