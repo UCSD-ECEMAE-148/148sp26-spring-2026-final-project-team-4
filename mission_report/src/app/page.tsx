@@ -1,5 +1,12 @@
+import Link from "next/link";
+
 export default function Home() {
   const cameraAngle = 0;
+
+  const mission = {
+    mode: "Manual Survey",
+    state: "Idle",
+  };
 
   const events = [
     "[00:00] Dashboard initialized",
@@ -14,7 +21,7 @@ export default function Home() {
   ];
 
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-100 p-6">
+    <main className="min-h-screen bg-slate-950 p-6 text-slate-100">
       <header className="mb-6 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-3xl font-bold">Survey Robot Dashboard</h1>
@@ -23,28 +30,28 @@ export default function Home() {
           </p>
         </div>
 
-        <button className="rounded-lg bg-blue-600 px-4 py-2 font-semibold hover:bg-blue-500">
+        <Link
+          href="/report"
+          className="rounded-lg bg-blue-600 px-4 py-2 font-semibold hover:bg-blue-500"
+        >
           Generate Report
-        </button>
+        </Link>
       </header>
 
-      <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="rounded-xl border border-slate-700 bg-slate-900 p-4">
-          <h2 className="mb-3 text-xl font-semibold">Live Camera Feed</h2>
-          <div className="aspect-video rounded-lg bg-slate-800 flex items-center justify-center text-slate-400">
+      <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <Card title="Live Camera Feed">
+          <div className="flex aspect-video items-center justify-center rounded-lg bg-slate-800 text-slate-400">
             OAK-D-Lite Camera Stream
           </div>
-        </div>
+        </Card>
 
-        <div className="rounded-xl border border-slate-700 bg-slate-900 p-4">
-          <h2 className="mb-3 text-xl font-semibold">Live 2D Map</h2>
-          <div className="aspect-video rounded-lg bg-slate-800 flex items-center justify-center text-slate-400">
+        <Card title="Live 2D Map">
+          <div className="flex aspect-video items-center justify-center rounded-lg bg-slate-800 text-slate-400">
             SLAM Map / Robot Pose / Path Trace
           </div>
-        </div>
+        </Card>
 
-        <div className="rounded-xl border border-slate-700 bg-slate-900 p-4">
-          <h2 className="mb-3 text-xl font-semibold">Camera Angle</h2>
+        <Card title="Camera Angle">
           <div className="mb-3 text-4xl font-bold">{cameraAngle}°</div>
 
           <input
@@ -61,26 +68,22 @@ export default function Home() {
             <span>0°</span>
             <span>+135°</span>
           </div>
-        </div>
+        </Card>
 
-        <div className="rounded-xl border border-slate-700 bg-slate-900 p-4">
-          <h2 className="mb-3 text-xl font-semibold">Robot Status</h2>
-
+        <Card title="Robot Status">
           <div className="grid grid-cols-2 gap-3">
             <StatusItem label="Connection" value="Connected" />
-            <StatusItem label="Mission State" value="Idle" />
+            <StatusItem label="Mission State" value={mission.state} />
             <StatusItem label="Battery" value="100%" />
-            <StatusItem label="Mode" value="Manual Survey" />
+            <StatusItem label="Mode" value={mission.mode} />
             <StatusItem label="Camera" value="Online" />
             <StatusItem label="SLAM" value="Waiting" />
           </div>
-        </div>
+        </Card>
       </section>
 
-      <section className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="rounded-xl border border-slate-700 bg-slate-900 p-4">
-          <h2 className="mb-3 text-xl font-semibold">Mission Event Log</h2>
-
+      <section className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <Card title="Mission Event Log">
           <ul className="space-y-2 text-slate-300">
             {events.map((event, index) => (
               <li key={index} className="rounded-lg bg-slate-800 p-2">
@@ -88,11 +91,9 @@ export default function Home() {
               </li>
             ))}
           </ul>
-        </div>
+        </Card>
 
-        <div className="rounded-xl border border-slate-700 bg-slate-900 p-4">
-          <h2 className="mb-3 text-xl font-semibold">Detections</h2>
-
+        <Card title="Detections">
           <div className="space-y-3">
             {detections.map((detection, index) => (
               <div key={index} className="rounded-lg bg-slate-800 p-3">
@@ -102,19 +103,28 @@ export default function Home() {
               </div>
             ))}
           </div>
-        </div>
+        </Card>
       </section>
     </main>
   );
 }
 
-function StatusItem({
-  label,
-  value,
+function Card({
+  title,
+  children,
 }: {
-  label: string;
-  value: string;
+  title: string;
+  children: React.ReactNode;
 }) {
+  return (
+    <div className="rounded-xl border border-slate-700 bg-slate-900 p-4">
+      <h2 className="mb-3 text-xl font-semibold">{title}</h2>
+      {children}
+    </div>
+  );
+}
+
+function StatusItem({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-lg bg-slate-800 p-3">
       <p className="text-sm text-slate-400">{label}</p>
