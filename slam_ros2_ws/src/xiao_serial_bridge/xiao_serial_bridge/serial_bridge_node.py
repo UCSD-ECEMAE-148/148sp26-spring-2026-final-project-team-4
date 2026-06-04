@@ -29,7 +29,7 @@ _POSE_COV[7] = 0.05   # y
 _POSE_COV[35] = 0.02  # yaw
 
 _TWIST_COV = [0.0] * 36
-_TWIST_COV[0] = 0.01   # vx
+_TWIST_COV[0] = 0.5    # vx — high covariance; accel-derived velocity is noisy
 _TWIST_COV[35] = 0.01  # vtheta
 
 

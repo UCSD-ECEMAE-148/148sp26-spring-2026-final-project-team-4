@@ -10,23 +10,23 @@ ekf_local_node:
     base_link_frame: base_link
     world_frame: odom         # local EKF lives in odom frame
 
-    # XIAO dead-reckoning — vx from accelerometer integration is too noisy; only trust yaw rate
+    # XIAO dead-reckoning — fuse vx and vtheta; slam_toolbox corrects position drift
     odom0: /odom
     odom0_config: [false, false, false,
                    false, false, false,
-                   false, false, false,
+                   true,  false, false,
                    false, false, true,
                    false, false, false]
     odom0_differential: false
 
-    # IMU — only fuse yaw rate (gyro Z); absolute orientation accumulates to hundreds of radians
+    # IMU — differential mode prevents accumulated yaw (hundreds of radians) entering the filter
     imu0: /imu
     imu0_config: [false, false, false,   # x, y, z position
-                  false, false, false,   # roll, pitch, yaw (accumulated — unreliable)
+                  true,  true,  true,    # roll, pitch, yaw (differential — change only)
                   false, false, false,   # vx, vy, vz
-                  false, false, true,    # vyaw only
+                  true,  true,  true,    # vroll, vpitch, vyaw
                   false, false, false]   # ax, ay, az
-    imu0_differential: false
+    imu0_differential: true
     imu0_remove_gravitational_acceleration: true
 
     use_control: true

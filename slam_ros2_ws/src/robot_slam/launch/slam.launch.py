@@ -2,7 +2,7 @@ import os
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, TimerAction
 from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
@@ -103,16 +103,22 @@ def generate_launch_description():
             ],
         ),
 
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(
-                os.path.join(slam_toolbox_pkg, 'launch', 'online_async_launch.py')
-            ),
-            launch_arguments={
-                'autostart': 'true',
-                'use_lifecycle_manager': 'false',
-                'use_sim_time': use_sim_time,
-                'slam_params_file': slam_params_file,
-            }.items(),
+        # Delay slam_toolbox 10s so EKF publishes odom→base_link TF before first scan lookup
+        TimerAction(
+            period=10.0,
+            actions=[
+                IncludeLaunchDescription(
+                    PythonLaunchDescriptionSource(
+                        os.path.join(slam_toolbox_pkg, 'launch', 'online_async_launch.py')
+                    ),
+                    launch_arguments={
+                        'autostart': 'true',
+                        'use_lifecycle_manager': 'false',
+                        'use_sim_time': use_sim_time,
+                        'slam_params_file': slam_params_file,
+                    }.items(),
+                ),
+            ],
         ),
 
         # Nav2 stack — only started when use_nav2:=true
