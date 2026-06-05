@@ -5,22 +5,27 @@ import Link from "next/link";
 export default function ReportPage() {
   const mission = {
     name: "Scout Survey Mission",
-    robot: "Survey Robot",
+    robot: "Scout Survey Rover",
+    mode: "Manual SLAM Survey",
+    driveControl: "Keyboard Teleoperation",
+    cameraControl: "Pico-Controlled Servo",
     startTime: "00:00",
-    duration: "00:12",
-    result: "Success",
+    duration: "03:42",
+    result: "Survey Completed",
   };
 
-  const detections = [
+  const cameraImages = [
     {
-      type: "AprilTag",
-      id: "Tag 01",
-      location: "x: 1.2 m, y: 0.4 m",
+      fileName: "inspection_001.jpg",
+      timeTaken: "00:48",
     },
     {
-      type: "Hazard",
-      id: "Obstacle",
-      location: "x: 2.1 m, y: -0.8 m",
+      fileName: "inspection_002.jpg",
+      timeTaken: "01:36",
+    },
+    {
+      fileName: "inspection_003.jpg",
+      timeTaken: "02:14",
     },
   ];
 
@@ -28,16 +33,18 @@ export default function ReportPage() {
     "[00:00] Dashboard initialized",
     "[00:03] Robot connected",
     "[00:07] Camera servo centered",
-    "[00:12] Waiting for SLAM data",
+    "[00:12] LiDAR stream active",
+    "[00:25] SLAM mapping started",
+    "[00:48] Camera image captured: inspection_001.jpg",
+    "[01:36] Camera image captured: inspection_002.jpg",
+    "[02:14] Camera image captured: inspection_003.jpg",
+    "[03:42] Survey completed",
   ];
 
   return (
     <main className="min-h-screen bg-white p-8 text-black">
       <div className="mb-8 flex items-center justify-between print:hidden">
-        <Link
-          href="/"
-          className="rounded-lg border px-4 py-2 hover:bg-slate-100"
-        >
+        <Link href="/" className="rounded-lg border px-4 py-2 hover:bg-slate-100">
           Back to Dashboard
         </Link>
 
@@ -49,22 +56,21 @@ export default function ReportPage() {
         </button>
       </div>
 
-      <h1 className="mb-2 text-4xl font-bold">
-        Mission Report
-      </h1>
+      <h1 className="mb-2 text-4xl font-bold">Mission Report</h1>
 
       <p className="mb-8 text-slate-600">
-        Autonomous Scout and Survey Rover
+        Manual SLAM Mapping and Camera Inspection Platform
       </p>
 
       <section className="mb-8">
-        <h2 className="mb-4 text-2xl font-semibold">
-          Mission Information
-        </h2>
+        <h2 className="mb-4 text-2xl font-semibold">Mission Information</h2>
 
         <div className="grid grid-cols-2 gap-4">
           <InfoItem label="Mission Name" value={mission.name} />
           <InfoItem label="Robot" value={mission.robot} />
+          <InfoItem label="Mode" value={mission.mode} />
+          <InfoItem label="Drive Control" value={mission.driveControl} />
+          <InfoItem label="Camera Control" value={mission.cameraControl} />
           <InfoItem label="Start Time" value={mission.startTime} />
           <InfoItem label="Duration" value={mission.duration} />
           <InfoItem label="Result" value={mission.result} />
@@ -72,82 +78,41 @@ export default function ReportPage() {
       </section>
 
       <section className="mb-8">
-        <h2 className="mb-4 text-2xl font-semibold">
-          Mission Summary
-        </h2>
+        <h2 className="mb-4 text-2xl font-semibold">Mission Summary</h2>
 
         <p className="text-slate-700">
-          The rover successfully completed its survey mission.
-          AprilTags and hazards were detected and recorded.
-          The generated map, robot trajectory, and camera
-          observations are summarized below.
+          The Scout Survey Rover was manually driven through the survey area
+          using keyboard teleoperation. During the mission, LiDAR and odometry
+          data were used to generate a live SLAM map. The OAK-D-Lite camera and
+          Pico-controlled servo were used to capture inspection images during the
+          survey.
         </p>
       </section>
 
       <section className="mb-8">
-        <h2 className="mb-4 text-2xl font-semibold">
-          Map Snapshot
-        </h2>
+        <h2 className="mb-4 text-2xl font-semibold">Generated SLAM Map</h2>
 
         <div className="flex h-80 items-center justify-center rounded-lg border bg-slate-100">
-          SLAM Map Image
+          SLAM Map Snapshot
         </div>
       </section>
 
       <section className="mb-8">
-        <h2 className="mb-4 text-2xl font-semibold">
-          Camera Images
-        </h2>
+        <h2 className="mb-4 text-2xl font-semibold">Captured Camera Images</h2>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div className="flex h-48 items-center justify-center rounded-lg border bg-slate-100">
-            Image 1
-          </div>
-
-          <div className="flex h-48 items-center justify-center rounded-lg border bg-slate-100">
-            Image 2
-          </div>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          {cameraImages.map((image) => (
+            <CameraImageCard
+              key={image.fileName}
+              fileName={image.fileName}
+              timeTaken={image.timeTaken}
+            />
+          ))}
         </div>
-      </section>
-
-      <section className="mb-8">
-        <h2 className="mb-4 text-2xl font-semibold">
-          Detections
-        </h2>
-
-        <table className="w-full border-collapse border">
-          <thead>
-            <tr>
-              <th className="border p-2">Type</th>
-              <th className="border p-2">ID</th>
-              <th className="border p-2">Location</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {detections.map((detection, index) => (
-              <tr key={index}>
-                <td className="border p-2">
-                  {detection.type}
-                </td>
-
-                <td className="border p-2">
-                  {detection.id}
-                </td>
-
-                <td className="border p-2">
-                  {detection.location}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
       </section>
 
       <section>
-        <h2 className="mb-4 text-2xl font-semibold">
-          Event Log
-        </h2>
+        <h2 className="mb-4 text-2xl font-semibold">Mission Event Log</h2>
 
         <ul className="list-disc pl-6">
           {events.map((event, index) => (
@@ -159,17 +124,30 @@ export default function ReportPage() {
   );
 }
 
-function InfoItem({
-  label,
-  value,
-}: {
-  label: string;
-  value: string;
-}) {
+function InfoItem({ label, value }: { label: string; value: string }) {
   return (
     <div>
       <p className="text-sm text-slate-500">{label}</p>
       <p className="text-lg font-semibold">{value}</p>
+    </div>
+  );
+}
+
+function CameraImageCard({
+  fileName,
+  timeTaken,
+}: {
+  fileName: string;
+  timeTaken: string;
+}) {
+  return (
+    <div className="rounded-lg border bg-slate-100 p-4">
+      <div className="mb-3 flex h-40 items-center justify-center rounded bg-white text-slate-400">
+        Camera Image
+      </div>
+
+      <p className="font-semibold">{fileName}</p>
+      <p className="text-sm text-slate-500">Time taken: {timeTaken}</p>
     </div>
   );
 }
