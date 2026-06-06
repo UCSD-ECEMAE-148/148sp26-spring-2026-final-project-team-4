@@ -108,9 +108,14 @@ export default function Home() {
 
       <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card title="Live Camera Feed">
-          <div className="flex aspect-video items-center justify-center rounded-lg bg-slate-800 text-slate-400">
-            OAK-D-Lite Camera Stream
-          </div>
+          <img
+            src="http://localhost:8080/video"
+            alt="OAK-D Camera Stream"
+            className="aspect-video w-full rounded-lg bg-slate-800 object-contain"
+            onError={(e) => {
+              e.currentTarget.style.display = "none";
+            }}
+          />
 
           <button
             onClick={takePicture}
@@ -123,7 +128,6 @@ export default function Home() {
             {photoTriggered ? "Captured!" : "Take Picture (Enter)"}
           </button>
         </Card>
-
         <Card title="Live SLAM Map">
           <div className="flex aspect-video items-center justify-center rounded-lg bg-slate-800 text-slate-400">
             /map visualization / robot pose / path trace
