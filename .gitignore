@@ -1,13 +1,3 @@
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-.pytest_cache/
-.coverage
-coverage.xml
-
-# Virtual environments
-venv/
 env/
 .env
 .venv/
@@ -38,3 +28,4 @@ slam_ros2_ws/log/
 
 # Misc
 *.log
+>>>>>>> origin/main

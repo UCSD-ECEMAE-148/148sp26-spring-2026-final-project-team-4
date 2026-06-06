@@ -4,17 +4,21 @@ slam_toolbox:
     odom_frame: odom
     map_frame: map
     base_frame: base_link
-    scan_topic: /scan
+    scan_topic: /scan_fixed
     use_scan_matching: true
     use_scan_barycenter: true
+    transform_timeout: 0.5
+    tf_buffer_duration: 30.0
 
+    throttle_scans: 3
     minimum_travel_distance: 0.1
     minimum_travel_heading: 0.2
-    scan_buffer_size: 10
+    scan_buffer_size: 5
     scan_buffer_maximum_scan_distance: 10.0
+    map_update_interval: 3.0
 
     loop_search_maximum_distance: 3.0
-    do_loop_closing: true
+    do_loop_closing: false
     loop_match_minimum_chain_size: 10
     loop_match_maximum_variance_coarse: 3.0
     loop_match_minimum_response_coarse: 0.35
