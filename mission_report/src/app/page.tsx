@@ -6,7 +6,9 @@ import { useEffect, useState } from "react";
 export default function Home() {
   const [driveCommand, setDriveCommand] = useState("Stop");
   const [cameraAngle, setCameraAngle] = useState(0);
+  const [cameraCommand, setCameraCommand] = useState("Center");
   const [lastPhoto, setLastPhoto] = useState("None");
+  const [photoTriggered, setPhotoTriggered] = useState(false);
 
   const events = [
     "[00:00] Dashboard initialized",
@@ -19,17 +21,38 @@ export default function Home() {
 
   function takePicture() {
     const fileName = `inspection_${Date.now()}.jpg`;
+
     setLastPhoto(fileName);
 
+    setPhotoTriggered(true);
+
+    setTimeout(() => {
+      setPhotoTriggered(false);
+    }, 250);
+
     // Future:
-    // Publish ROS2 service request here
+    // Call ROS2 capture service here
+  }
+
+  function panCameraLeft() {
+    setCameraCommand("Left");
+    setCameraAngle((prev) => Math.max(-45, prev - 1));
+  }
+
+  function centerCamera() {
+    setCameraCommand("Center");
+    setCameraAngle(0);
+  }
+
+  function panCameraRight() {
+    setCameraCommand("Right");
+    setCameraAngle((prev) => Math.min(45, prev + 1));
   }
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       const key = event.key.toLowerCase();
 
-      // Rover Driving
       if (key === "w") setDriveCommand("Forward");
       if (key === "s") setDriveCommand("Reverse");
       if (key === "a") setDriveCommand("Turn Left");
@@ -40,25 +63,11 @@ export default function Home() {
         setDriveCommand("Stop");
       }
 
-      // Camera Servo
+      if (key === "j") panCameraLeft();
+      if (key === "k") centerCamera();
+      if (key === "l") panCameraRight();
 
-      if (key === "j") {
-        setCameraAngle((prev) => Math.max(-45, prev - 1));
-      }
-
-      if (key === "l") {
-        setCameraAngle((prev) => Math.min(45, prev + 1));
-      }
-
-      if (key === "k") {
-        setCameraAngle(0);
-      }
-
-      // Take Picture
-
-      if (key === "enter") {
-        takePicture();
-      }
+      if (key === "enter") takePicture();
     }
 
     window.addEventListener("keydown", handleKeyDown);
@@ -77,8 +86,8 @@ export default function Home() {
           </h1>
 
           <p className="text-slate-400">
-            Manual driving, live SLAM mapping, camera inspection,
-            and mission report generation
+            Manual driving, live SLAM mapping, camera inspection, and mission
+            report generation
           </p>
         </div>
 
@@ -105,9 +114,13 @@ export default function Home() {
 
           <button
             onClick={takePicture}
-            className="mt-4 w-full rounded-lg bg-blue-600 px-4 py-3 font-semibold hover:bg-blue-500"
+            className={`mt-4 w-full rounded-lg px-4 py-3 font-semibold transition-all duration-200 ${
+              photoTriggered
+                ? "bg-green-600 scale-95"
+                : "bg-blue-600 hover:bg-blue-500"
+            }`}
           >
-            Take Picture (Enter)
+            {photoTriggered ? "Captured!" : "Take Picture (Enter)"}
           </button>
         </Card>
 
@@ -125,6 +138,7 @@ export default function Home() {
               label="W"
               action="Forward"
               active={driveCommand === "Forward"}
+              onClick={() => setDriveCommand("Forward")}
             />
 
             <div />
@@ -133,18 +147,21 @@ export default function Home() {
               label="A"
               action="Left"
               active={driveCommand === "Turn Left"}
+              onClick={() => setDriveCommand("Turn Left")}
             />
 
             <Key
               label="Space"
               action="Stop"
               active={driveCommand === "Stop"}
+              onClick={() => setDriveCommand("Stop")}
             />
 
             <Key
               label="D"
               action="Right"
               active={driveCommand === "Turn Right"}
+              onClick={() => setDriveCommand("Turn Right")}
             />
 
             <div />
@@ -153,18 +170,16 @@ export default function Home() {
               label="S"
               action="Reverse"
               active={driveCommand === "Reverse"}
+              onClick={() => setDriveCommand("Reverse")}
             />
 
             <div />
           </div>
-
         </Card>
 
         <Card title="Camera Servo Control">
           <div className="mb-4 text-center">
-            <p className="text-5xl font-bold">
-              {cameraAngle}°
-            </p>
+            <p className="text-5xl font-bold">{cameraAngle}°</p>
           </div>
 
           <input
@@ -173,9 +188,14 @@ export default function Home() {
             max={45}
             step={1}
             value={cameraAngle}
-            onChange={(e) =>
-              setCameraAngle(Number(e.target.value))
-            }
+            onChange={(e) => {
+              const nextAngle = Number(e.target.value);
+              setCameraAngle(nextAngle);
+
+              if (nextAngle < 0) setCameraCommand("Left");
+              else if (nextAngle > 0) setCameraCommand("Right");
+              else setCameraCommand("Center");
+            }}
             className="w-full"
           />
 
@@ -186,9 +206,26 @@ export default function Home() {
           </div>
 
           <div className="mt-4 grid grid-cols-3 gap-3 text-center">
-            <Key label="J" action="-1°" active={false} />
-            <Key label="K" action="Center" active={false} />
-            <Key label="L" action="+1°" active={false} />
+            <Key
+              label="J"
+              action="-1°"
+              active={cameraCommand === "Left"}
+              onClick={panCameraLeft}
+            />
+
+            <Key
+              label="K"
+              action="Center"
+              active={cameraCommand === "Center"}
+              onClick={centerCamera}
+            />
+
+            <Key
+              label="L"
+              action="+1°"
+              active={cameraCommand === "Right"}
+              onClick={panCameraRight}
+            />
           </div>
         </Card>
       </section>
@@ -208,10 +245,7 @@ export default function Home() {
         <Card title="Mission Event Log">
           <ul className="space-y-2 text-slate-300">
             {events.map((event, index) => (
-              <li
-                key={index}
-                className="rounded-lg bg-slate-800 p-2"
-              >
+              <li key={index} className="rounded-lg bg-slate-800 p-2">
                 {event}
               </li>
             ))}
@@ -231,31 +265,17 @@ function Card({
 }) {
   return (
     <div className="rounded-xl border border-slate-700 bg-slate-900 p-4">
-      <h2 className="mb-3 text-xl font-semibold">
-        {title}
-      </h2>
-
+      <h2 className="mb-3 text-xl font-semibold">{title}</h2>
       {children}
     </div>
   );
 }
 
-function StatusItem({
-  label,
-  value,
-}: {
-  label: string;
-  value: string;
-}) {
+function StatusItem({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-lg bg-slate-800 p-3">
-      <p className="text-sm text-slate-400">
-        {label}
-      </p>
-
-      <p className="break-words text-lg font-semibold">
-        {value}
-      </p>
+      <p className="text-sm text-slate-400">{label}</p>
+      <p className="break-words text-lg font-semibold">{value}</p>
     </div>
   );
 }
@@ -264,22 +284,23 @@ function Key({
   label,
   action,
   active,
+  onClick,
 }: {
   label: string;
   action: string;
   active: boolean;
+  onClick?: () => void;
 }) {
   return (
-    <div
+    <button
+      type="button"
+      onClick={onClick}
       className={`rounded-lg p-3 ${
-        active ? "bg-blue-600" : "bg-slate-800"
+        active ? "bg-blue-600" : "bg-slate-800 hover:bg-slate-700"
       }`}
     >
       <p className="font-bold">{label}</p>
-
-      <p className="text-sm text-slate-300">
-        {action}
-      </p>
-    </div>
+      <p className="text-sm text-slate-300">{action}</p>
+    </button>
   );
 }
