@@ -1,3 +1,13 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+coverage.xml
+
+# Virtual environments
+venv/
 env/
 .env
 .venv/
@@ -12,7 +22,6 @@ pip-wheel-metadata/
 # Node
 node_modules/
 website/frontend/node_modules/
-dist/
 
 # ROS / colcon build artifacts and logs
 slam_ros2_ws/build/
@@ -29,4 +38,3 @@ slam_ros2_ws/log/
 
 # Misc
 *.log
->>>>>>> origin/main
