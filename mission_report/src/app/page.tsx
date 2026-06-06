@@ -158,9 +158,6 @@ export default function Home() {
             <div />
           </div>
 
-          <p className="mt-4 text-sm text-slate-400">
-            Keyboard teleoperation for rover driving
-          </p>
         </Card>
 
         <Card title="Camera Servo Control">
@@ -192,16 +189,6 @@ export default function Home() {
             <Key label="J" action="-1°" active={false} />
             <Key label="K" action="Center" active={false} />
             <Key label="L" action="+1°" active={false} />
-          </div>
-
-          <div className="mt-4 rounded-lg bg-slate-800 p-3">
-            <p className="text-sm text-slate-400">
-              Servo Command
-            </p>
-
-            <p className="font-mono text-lg">
-              C_SERVO:{cameraAngle}
-            </p>
           </div>
         </Card>
       </section>
