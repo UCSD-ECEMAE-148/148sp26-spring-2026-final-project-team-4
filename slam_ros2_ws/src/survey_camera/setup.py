@@ -25,6 +25,7 @@ setup(
     entry_points={
         'console_scripts': [
             "camera_node = survey_camera.camera_node:main",
+            "web_bridge = survey_camera.web_bridge_node:main",
         ],
     },
 )
