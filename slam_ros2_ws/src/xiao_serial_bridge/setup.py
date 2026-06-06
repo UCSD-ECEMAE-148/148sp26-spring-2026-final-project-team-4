@@ -19,6 +19,7 @@ setup(
     entry_points={
         'console_scripts': [
             'serial_bridge_node = xiao_serial_bridge.serial_bridge_node:main',
+            'scan_relay_node = xiao_serial_bridge.scan_relay_node:main',
         ],
     },
 )

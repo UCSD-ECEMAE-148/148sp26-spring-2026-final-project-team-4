@@ -181,11 +181,11 @@ ros2 run xiao_serial_bridge serial_bridge_node \
 
 ```bash
 arduino-cli compile \
-  --fqbn Seeed_nRF52_Boards:nrf52:xiaonRF52840Sense \
+  --fqbn Seeeduino:nrf52:xiaonRF52840Sense \
   src/xiao_serial_bridge/firmware/xiao_odom
 
 arduino-cli upload \
-  --fqbn Seeed_nRF52_Boards:nrf52:xiaonRF52840Sense \
+  --fqbn Seeeduino:nrf52:xiaonRF52840Sense \
   --port /dev/ttyACM0 \
   src/xiao_serial_bridge/firmware/xiao_odom
 ```

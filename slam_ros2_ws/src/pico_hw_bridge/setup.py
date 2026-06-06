@@ -24,6 +24,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
+            'pico_hw_server = pico_hw_bridge.pico_hw_server:main',
         ],
     },
 )

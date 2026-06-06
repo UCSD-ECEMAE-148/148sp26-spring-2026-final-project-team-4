@@ -12,7 +12,7 @@ static unsigned long seq = 0;
 
 void setup() {
     Serial.begin(115200);
-    while (!Serial) {}
+    while (!Serial && millis() < 5000) {}
 
     if (imu.begin() != 0) {
         Serial.println("ERR:IMU_INIT");
