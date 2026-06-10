@@ -1,0 +1,228 @@
+name: UCSD Robocar Docker + ROS2 Build Workflow
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - stable
+  push:
+    branches:
+      - stable
+
+jobs:
+  build-push-amd64:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      # This is used to complete the identity challenge
+      # with sigstore/fulcio when running outside of PRs.
+      id-token: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - SAVE_NAME: ucsd_robocar
+            ROS_DISTRO: jazzy
+            ROS_SOURCE: jazzy
+    outputs:
+      image_name: ${{ steps.save_image_name.outputs.image_name }}
+      cache_name: ${{ steps.save_image_name.outputs.cache_name }}
+      tag_name: ${{ steps.save_image_name.outputs.tag_name }}
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          install: true
+      - name: Get the Ref
+        id: get-ref
+        uses: sisaha9/ref-to-tag-action@v2
+        with:
+          ref: ${{ github.ref }}
+          head_ref: ${{ github.head_ref }}
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@v1.3.1
+        with:
+          tool-cache: true
+      - name: Cache Docker layers
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.buildx-cache-${{ matrix.SAVE_NAME }}
+          key: ${{ runner.os }}-buildx-dev-${{ matrix.SAVE_NAME }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-dev-${{ matrix.SAVE_NAME }}
+            ${{ runner.os }}-buildx-dev
+      - name: Build and Push Docker image
+        id: docker_build_push
+        uses: docker/build-push-action@v6
+        with:
+          platforms: linux/amd64
+          context: .
+          file: tools/image/Dockerfile
+          pull: true
+          push: true
+          tags: |
+            ghcr.io/ucsd-ecemae-148/${{ matrix.SAVE_NAME }}:${{ steps.get-ref.outputs.tag }}-amd64
+          ssh: |
+            default=${{ env.SSH_AUTH_SOCK }}
+          cache-from: type=local,src=/tmp/.buildx-cache-${{ matrix.SAVE_NAME }}
+          cache-to: type=local,dest=/tmp/.buildx-cache-new-${{ matrix.SAVE_NAME }},mode=max
+          build-args: |
+            ROS_DISTRO=${{ matrix.ROS_DISTRO }}
+            ROS_SOURCE=${{ matrix.ROS_SOURCE }}
+          target: ucsd_robocar2
+      - name: Delete old cache
+        run: |
+          rm -rf /tmp/.buildx-cache-${{ matrix.SAVE_NAME }}
+          mv /tmp/.buildx-cache-new-${{ matrix.SAVE_NAME }} /tmp/.buildx-cache-${{ matrix.SAVE_NAME }}
+      - name: Save image name to Github Output
+        id: save_image_name
+        run: |
+          echo "image_name=ghcr.io/ucsd-ecemae-148/${{ matrix.SAVE_NAME }}:${{ steps.get-ref.outputs.tag }}" >> $GITHUB_OUTPUT
+          echo "cache_name=${{ matrix.SAVE_NAME }}" >> $GITHUB_OUTPUT
+          echo "tag_name=${{ steps.get-ref.outputs.tag }}" >> $GITHUB_OUTPUT
+
+  build-push-arm64:
+    runs-on: ARM64
+    permissions:
+      contents: read
+      packages: write
+      # This is used to complete the identity challenge
+      # with sigstore/fulcio when running outside of PRs.
+      id-token: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - SAVE_NAME: ucsd_robocar
+            ROS_DISTRO: jazzy
+            ROS_SOURCE: jazzy
+    outputs:
+      image_name: ${{ steps.save_image_name.outputs.image_name }}
+      cache_name: ${{ steps.save_image_name.outputs.cache_name }}
+      tag_name: ${{ steps.save_image_name.outputs.tag_name }}
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          install: true
+      - name: Get the Ref
+        id: get-ref
+        uses: sisaha9/ref-to-tag-action@v2
+        with:
+          ref: ${{ github.ref }}
+          head_ref: ${{ github.head_ref }}
+      # - name: Free Disk Space (Ubuntu)
+      #   uses: jlumbroso/free-disk-space@v1.3.1
+      #   with:
+      #     tool-cache: true
+      - name: Cache Docker layers
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.buildx-cache-${{ matrix.SAVE_NAME }}
+          key: ${{ runner.os }}-buildx-dev-${{ matrix.SAVE_NAME }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-dev-${{ matrix.SAVE_NAME }}
+            ${{ runner.os }}-buildx-dev
+      - name: Build and Push Docker image
+        id: docker_build_push
+        uses: docker/build-push-action@v6
+        with:
+          platforms: linux/arm64/v8
+          context: .
+          file: tools/image/Dockerfile
+          pull: true
+          push: true
+          tags: |
+            ghcr.io/ucsd-ecemae-148/${{ matrix.SAVE_NAME }}:${{ steps.get-ref.outputs.tag }}-arm64
+          ssh: |
+            default=${{ env.SSH_AUTH_SOCK }}
+          cache-from: type=local,src=/tmp/.buildx-cache-${{ matrix.SAVE_NAME }}
+          cache-to: type=local,dest=/tmp/.buildx-cache-new-${{ matrix.SAVE_NAME }},mode=max
+          build-args: |
+            ROS_DISTRO=${{ matrix.ROS_DISTRO }}
+            ROS_SOURCE=${{ matrix.ROS_SOURCE }}
+          target: ucsd_robocar2
+      - name: Delete old cache
+        run: |
+          rm -rf /tmp/.buildx-cache-${{ matrix.SAVE_NAME }}
+          mv /tmp/.buildx-cache-new-${{ matrix.SAVE_NAME }} /tmp/.buildx-cache-${{ matrix.SAVE_NAME }}
+      - name: Save image name to Github Output
+        id: save_image_name
+        run: |
+          echo "image_name=ghcr.io/ucsd-ecemae-148/${{ matrix.SAVE_NAME }}:${{ steps.get-ref.outputs.tag }}" >> $GITHUB_OUTPUT
+          echo "cache_name=${{ matrix.SAVE_NAME }}" >> $GITHUB_OUTPUT
+          echo "tag_name=${{ steps.get-ref.outputs.tag }}" >> $GITHUB_OUTPUT
+
+  create-manifest:
+    runs-on: ubuntu-latest
+    needs: [build-push-amd64, build-push-arm64]
+    permissions:
+      contents: read
+      packages: write
+      # This is used to complete the identity challenge
+      # with sigstore/fulcio when running outside of PRs.
+      id-token: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - SAVE_NAME: ucsd_robocar
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          install: true
+      - name: Get the Ref
+        id: get-ref
+        uses: sisaha9/ref-to-tag-action@v2
+        with:
+          ref: ${{ github.ref }}
+          head_ref: ${{ github.head_ref }}
+      - name: Create and push multi-arch manifest
+        run: |
+          docker buildx imagetools create \
+            -t ghcr.io/ucsd-ecemae-148/${{ matrix.SAVE_NAME }}:${{ steps.get-ref.outputs.tag }} \
+            ghcr.io/ucsd-ecemae-148/${{ matrix.SAVE_NAME }}:${{ steps.get-ref.outputs.tag }}-amd64 \
+            ghcr.io/ucsd-ecemae-148/${{ matrix.SAVE_NAME }}:${{ steps.get-ref.outputs.tag }}-arm64
