@@ -23,7 +23,7 @@ inline void calibrateGyroBias(LSM6DS3 &imu, ImuState &state, int n) {
 
 // Call once per IMU sample. dt_s is elapsed time in seconds.
 inline void integrateImu(LSM6DS3 &imu, ImuState &state, float dt_s) {
-    float gz = imu.readFloatGyroZ() - state.gyro_bias_z;
+    float gz = (imu.readFloatGyroZ() - state.gyro_bias_z) * DEG_TO_RAD;
     float ax = imu.readFloatAccelX();
     float ay = imu.readFloatAccelY();
 

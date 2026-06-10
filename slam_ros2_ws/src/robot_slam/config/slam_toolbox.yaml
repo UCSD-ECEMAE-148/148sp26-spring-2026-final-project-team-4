@@ -10,12 +10,12 @@ slam_toolbox:
     transform_timeout: 0.5
     tf_buffer_duration: 30.0
 
-    throttle_scans: 3
-    minimum_travel_distance: 0.1
-    minimum_travel_heading: 0.2
-    scan_buffer_size: 5
+    throttle_scans: 1
+    minimum_travel_distance: 0.0
+    minimum_travel_heading: 0.0
+    scan_buffer_size: 15
     scan_buffer_maximum_scan_distance: 10.0
-    map_update_interval: 3.0
+    map_update_interval: 1.0
 
     loop_search_maximum_distance: 3.0
     do_loop_closing: false

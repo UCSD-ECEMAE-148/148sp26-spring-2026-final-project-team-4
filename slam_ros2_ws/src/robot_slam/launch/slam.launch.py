@@ -79,7 +79,11 @@ def generate_launch_description():
             executable='scan_relay_node',
             name='scan_relay_node',
             output='screen',
-            parameters=[{'target_beams': 450}],
+            parameters=[{
+                'target_beams': 720,
+                'fov_deg': 250.0,
+                'fov_center_deg': 0.0,
+            }],
         ),
 
         Node(

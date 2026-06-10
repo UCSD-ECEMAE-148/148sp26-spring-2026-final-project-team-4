@@ -12,23 +12,23 @@ sleep 4
 ros2 launch robot_slam launch_stage_1.launch.py > /tmp/launch_out.txt 2>&1 &
 LAUNCH=$!
 
-sleep 40
+sleep 60
 
 echo "=== nodes ==="
 ros2 node list 2>&1 | grep -Ev "transform_listener|launch_ros|joy|teleop|vesc|ld06"
 
 echo "=== topics ==="
-for topic in /odom /scan_fixed /odometry/filtered /map; do
+for topic in /odom /scan_fixed /odometry/filtered /map /slam_toolbox/scan_visualization; do
   rate=$(timeout 4 ros2 topic hz $topic 2>&1 | grep "average rate" | awk '{print $3}')
   echo "  $topic: ${rate:-NOT PUBLISHING}"
 done
 
-echo "=== TF ==="
-cd /tmp && timeout 5 ros2 run tf2_tools view_frames 2>/dev/null
-grep " -> " /tmp/frames.gv 2>/dev/null | sed 's/.*"\(.*\)" -> "\(.*\)".*/  \1 -> \2/' | sort
+echo "=== TF frames ==="
+cd /tmp && timeout 6 ros2 run tf2_tools view_frames 2>/dev/null
+cat /tmp/frames.gv 2>/dev/null | grep " -> " | sed 's/.*"\(.*\)" -> "\(.*\)".*/  \1 -> \2/' | sort
 
 echo "=== launch errors ==="
-grep -E "ERROR|process has died|Caught exception" /tmp/launch_out.txt || echo "  none"
+grep -E "ERROR|process has died|Caught exception|Message Filter dropping" /tmp/launch_out.txt | grep -v "^$" | tail -10
 
 kill $LAUNCH $BRIDGE 2>/dev/null
 wait 2>/dev/null

@@ -28,23 +28,20 @@ class SurveyCameraNode(Node):
         )
         os.makedirs(self.save_dir, exist_ok=True)
 
-        pipeline = dai.Pipeline()
+        # depthai v3: Pipeline takes a Device, no XLinkOut needed
+        self.pipeline = dai.Pipeline(dai.Device())
 
-        cam = pipeline.create(dai.node.ColorCamera)
-        cam.setPreviewSize(640, 480)
-        cam.setInterleaved(False)
-        cam.setColorOrder(dai.ColorCameraProperties.ColorOrder.BGR)
-
-        xout = pipeline.create(dai.node.XLinkOut)
-        xout.setStreamName("video")
-        cam.preview.link(xout.input)
-
-        self.device = dai.Device(pipeline)
-        self.queue = self.device.getOutputQueue(
-            name="video",
-            maxSize=4,
-            blocking=False,
+        cam = self.pipeline.create(dai.node.Camera).build(
+            dai.CameraBoardSocket.CAM_A
         )
+
+        cap = dai.ImgFrameCapability()
+        cap.size.fixed((640, 480))
+
+        cam_output = cam.requestOutput(cap, True)
+        self.queue = cam_output.createOutputQueue(maxSize=4, blocking=False)
+
+        self.pipeline.start()
 
         self.timer = self.create_timer(0.03, self.timer_callback)
 
@@ -83,6 +80,10 @@ class SurveyCameraNode(Node):
         self.get_logger().info(f"Saved image: {filepath}")
 
         return response
+
+    def destroy_node(self):
+        self.pipeline.stop()
+        super().destroy_node()
 
 
 def main(args=None):

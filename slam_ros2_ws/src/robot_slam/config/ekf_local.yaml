@@ -10,14 +10,23 @@ ekf_local_node:
     base_link_frame: base_link
     world_frame: odom         # local EKF lives in odom frame
 
-    # XIAO dead-reckoning — fuse vx and vtheta; slam_toolbox corrects position drift
+    # XIAO dead-reckoning — fuse vtheta only; vx is unreliable (accel-based, zero at constant speed)
     odom0: /odom
     odom0_config: [false, false, false,
                    false, false, false,
-                   true,  false, false,
+                   false, false, false,
                    false, false, true,
                    false, false, false]
     odom0_differential: false
+
+    # VESC wheel odometry — fuse vx only; gives real translational velocity from eRPM
+    odom1: /vesc_odom
+    odom1_config: [false, false, false,
+                   false, false, false,
+                   true,  false, false,
+                   false, false, false,
+                   false, false, false]
+    odom1_differential: false
 
     # IMU — differential mode prevents accumulated yaw (hundreds of radians) entering the filter
     imu0: /imu

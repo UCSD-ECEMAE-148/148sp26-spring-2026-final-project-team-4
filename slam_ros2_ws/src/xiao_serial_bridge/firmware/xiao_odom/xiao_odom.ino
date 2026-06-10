@@ -41,9 +41,9 @@ void loop() {
         Serial.print(imu.readFloatAccelX(), 6); Serial.print(',');
         Serial.print(imu.readFloatAccelY(), 6); Serial.print(',');
         Serial.print(imu.readFloatAccelZ(), 6); Serial.print(',');
-        Serial.print(imu.readFloatGyroX(), 6);  Serial.print(',');
-        Serial.print(imu.readFloatGyroY(), 6);  Serial.print(',');
-        Serial.print(imu.readFloatGyroZ(), 6);  Serial.print(',');
+        Serial.print(imu.readFloatGyroX() * DEG_TO_RAD, 6);  Serial.print(',');
+        Serial.print(imu.readFloatGyroY() * DEG_TO_RAD, 6);  Serial.print(',');
+        Serial.print(state.vtheta, 6);  Serial.print(',');  // bias-corrected, matches dead-reckoning
         Serial.print(state.x, 6);     Serial.print(',');
         Serial.print(state.y, 6);     Serial.print(',');
         Serial.print(state.theta, 6); Serial.print(',');

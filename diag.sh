@@ -2,43 +2,31 @@
 source /opt/ros/jazzy/setup.bash
 source /home/pi/scout-survey-rover/slam_ros2_ws/install/setup.bash
 
-pkill -9 -f "serial_bridge_node|ekf_node|slam_toolbox|robot_state_publisher|scan_relay_node" 2>/dev/null
+pkill -9 -f "serial_bridge_node|ekf_node|slam_toolbox|robot_state_publisher|scan_relay_node" 2>/dev/null || true
 sleep 2
 
 ros2 run xiao_serial_bridge serial_bridge_node 2>/dev/null &
 sleep 4
 
-ros2 run robot_state_publisher robot_state_publisher \
-  --ros-args -p robot_description:="$(cat /home/pi/scout-survey-rover/slam_ros2_ws/src/robot_slam/urdf/robot.urdf.xacro)" 2>/dev/null &
+ros2 launch robot_slam launch_stage_1.launch.py > /tmp/launch_out.txt 2>&1 &
+LAUNCH_PID=$!
 
-ros2 run robot_localization ekf_node \
-  --ros-args --params-file /home/pi/scout-survey-rover/slam_ros2_ws/install/robot_slam/share/robot_slam/config/ekf_local.yaml 2>&1 | grep --line-buffered -Ev "^$" &
+sleep 25
 
-ros2 run xiao_serial_bridge scan_relay_node 2>/dev/null &
+echo "=== /scan active? ==="
+timeout 4 ros2 topic hz /scan 2>&1 | grep -E "rate|WARNING"
 
-sleep 10
+echo "=== /scan_fixed active? ==="
+timeout 4 ros2 topic hz /scan_fixed 2>&1 | grep -E "rate|WARNING"
 
-echo "=== pre-slam state ==="
-for topic in /odom /scan_fixed /odometry/filtered; do
-  rate=$(timeout 3 ros2 topic hz $topic 2>&1 | grep "average rate" | awk '{print $3}')
-  echo "  $topic: ${rate:-NOT PUBLISHING}"
-done
+echo "=== /tf data ==="
+timeout 3 ros2 topic echo /tf --once 2>&1 | head -30
 
-echo "=== TF ==="
-cd /tmp && timeout 5 ros2 run tf2_tools view_frames 2>/dev/null
-grep " -> " /tmp/frames.gv 2>/dev/null | sed 's/.*"\(.*\)" -> "\(.*\)".*/  \1 -> \2/' | sort
+echo "=== /tf_static ==="
+timeout 3 ros2 topic echo /tf_static --once 2>&1 | head -15
 
-echo "=== starting slam_toolbox ==="
-ros2 launch slam_toolbox online_async_launch.py \
-  slam_params_file:=/home/pi/scout-survey-rover/slam_ros2_ws/install/robot_slam/share/robot_slam/config/slam_toolbox.yaml \
-  use_lifecycle_manager:=false autostart:=true 2>&1 &
-SLAM_PID=$!
+echo "=== last 15 launch lines ==="
+tail -15 /tmp/launch_out.txt
 
-sleep 20
-
-echo "=== slam alive after 20s? ==="
-kill -0 $SLAM_PID 2>/dev/null && echo "YES - still running" || echo "NO - crashed"
-ros2 node list 2>&1 | grep -E "slam|ekf"
-
-kill $(jobs -p) 2>/dev/null
+kill $LAUNCH_PID 2>/dev/null
 wait 2>/dev/null
