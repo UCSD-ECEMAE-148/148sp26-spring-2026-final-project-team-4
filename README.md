@@ -1,3 +1,7 @@
+# WORK IN PROGRESS (not submission ready)
+
+---
+
 # <div align="center">Autonomous Scout and Survey Rover w/ Mission Report Generation</div>
 ### <div align="center"> ECE/MAE 148 Final Project </div>
 #### <div align="center"> Team4 Spring 2026 </div>
