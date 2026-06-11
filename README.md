@@ -49,7 +49,7 @@ Our project aimed to develop a SLAM and autonomous navigation system capable of 
 
 [Final Presentation Slides](https://docs.google.com/presentation/d/100er0TgurMbT8JcgmrrsiwRIkXcWnn7BoJnauJ2WcTg/edit?usp=sharing)
 
-TBD
+[Demo Video](https://drive.google.com/file/d/1kE3kcbYyW5jzt6wzRNw6U-6pjJctakA8/view?usp=sharing)
 
 ## Documentation
 
