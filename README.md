@@ -1,7 +1,3 @@
-# WORK IN PROGRESS (not submission ready)
-
----
-
 # <div align="center">Scout Survey Rover w/ Mission Report Generation</div>
 ### <div align="center"> ECE/MAE 148 Final Project </div>
 #### <div align="center"> Team4 Spring 2026 </div>
@@ -17,9 +13,13 @@ Evan Robert - ECE
 
 Thejo Tattala - MAE
 
+<hr>
+
 ## Abstract
 
 Our project aimed to develop a SLAM and autonomous navigation system capable of fusing multiple sensors for mapping a full indoor room and localizing the robot's position. With telemetry data and logging from the ROS 2 system, we also aimed to expose the robot through a web-based controller and dashboard for remote control, and to generate mission reports from its exploration data.
+
+<hr>
 
 ## What We Promised
 ### Must Have
@@ -32,6 +32,8 @@ Our project aimed to develop a SLAM and autonomous navigation system capable of 
 * LLM-based summarization of reported findings through on-board edge inference
 * Cosmetic additions such as LED strip for indicating exploration status 
 
+<hr>
+
 ## Accomplishments
 
 - Successfully launched visual SLAM with an Extended Kalman Filter for robot localization
@@ -39,17 +41,23 @@ Our project aimed to develop a SLAM and autonomous navigation system capable of 
 - Configured IMU odometry firmware and ROS 2 driver for the Seeed XIAO nRF52840 Sense
 - Added rotational camera and LED strip features, and coded firmware for operating them via serial commands
 
+<hr>
+
 ## Challenges
 
 - Calibrating and finetuning parameters for EKF-related configurations, including VESC and IMU odometry
 - Hardware limitations with CPU and RAM power forced us to lower frequencies of data publishing and perform timed launching
 - Integrating Nav2 for autonomous navigation, which was not able to be accomplished during this time
 
+<hr>
+
 ## Final Project Videos
 
 [Final Presentation Slides](https://docs.google.com/presentation/d/100er0TgurMbT8JcgmrrsiwRIkXcWnn7BoJnauJ2WcTg/edit?usp=sharing)
 
 [Demo Video](https://drive.google.com/file/d/1kE3kcbYyW5jzt6wzRNw6U-6pjJctakA8/view?usp=sharing)
+
+<hr>
 
 ## Documentation
 
@@ -59,11 +67,15 @@ Our project aimed to develop a SLAM and autonomous navigation system capable of 
 - [Software Systems documentation](docs/software_systems.md) for learning about our software architectures and systems.
 - [Robot Hardware documentation](docs/robot_hardware.md) for learning about our improved hardware components, including electrical and mechanical revamps.
 
+<hr>
+
 ## Acknowledgements
 
 Special thank you to Professor Silberman and TAs Jose Castillo and Winston Chou for facilitating this course!
 
 README.md Format, reference to [winter-2024-final-project-team-7](https://github.com/UCSD-ECEMAE-148/winter-2024-final-project-team-7)
+
+<hr>
 
 ## Contacts
 
