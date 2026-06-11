@@ -2,7 +2,8 @@
 
 ---
 
-# <div align="center">Autonomous Scout and Survey Rover w/ Mission Report Generation</div>
+# <div align="center">Scout Survey Rover w/ Mission Report Generation</div>
+![image]("https://github.com/UCSD-ECEMAE-148/148sp26-spring-2026-final-project-team-4/docs/media/car.jpg")
 ### <div align="center"> ECE/MAE 148 Final Project </div>
 #### <div align="center"> Team4 Spring 2026 </div>
 
