@@ -297,6 +297,12 @@ if [ "$FULL" = "true" ]; then
         > /tmp/stage1_mission_report.log 2>&1 &
     PIDS+=($!)
     ok "mission_report dev server launched → /tmp/stage1_mission_report.log"
+
+    _NET_IP=$(hostname -I 2>/dev/null | awk '{print $1}')
+    echo ""
+    echo -e "  ${GRN}Web dashboard:${NC}"
+    echo    "    Local:    http://localhost:3000"
+    [ -n "$_NET_IP" ] && echo "    Network:  http://${_NET_IP}:3000"
     echo ""
 fi
 
