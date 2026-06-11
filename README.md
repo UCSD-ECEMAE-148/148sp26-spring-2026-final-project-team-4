@@ -3,9 +3,9 @@
 ---
 
 # <div align="center">Scout Survey Rover w/ Mission Report Generation</div>
-![image](https://raw.githubusercontent.com/UCSD-ECEMAE-148/148sp26-spring-2026-final-project-team-4/main/docs/media/car.jpg)
 ### <div align="center"> ECE/MAE 148 Final Project </div>
 #### <div align="center"> Team4 Spring 2026 </div>
+![image](https://raw.githubusercontent.com/UCSD-ECEMAE-148/148sp26-spring-2026-final-project-team-4/main/docs/media/car.jpg)
 
 ## Team Members
 
@@ -28,12 +28,16 @@ TBD
 * Rotational camera for scanning and examining surrounding environment at wider angles
 
 ### Nice to Have
+* Computer vision and object detection/avoidance with standard YOLO model
 * LLM-based summarization of reported findings through on-board edge inference
 * Cosmetic additions such as LED strip for indicating exploration status 
 
 ## Accomplishments
 
-TBD
+- Successfully launched visual SLAM with an Extended Kalman Filter for robot localization
+- Integrated a web controller and dashboard for robot control via ROS 2 socket bridges
+- Configured IMU odometry firmware and ROS 2 driver for the Seeed XIAO nRF52840 Sense
+- Added rotational camera and LED strip features, and coded firmware for operating via serial commands
 
 ## Challenges
 

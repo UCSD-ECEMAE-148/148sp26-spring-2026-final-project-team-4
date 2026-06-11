@@ -24,10 +24,14 @@ __Parts List__
 
 ## Mechanical Design Highlight
 
-__Base Plate__
-
 __Camera Stand__
+
+![image](https://raw.githubusercontent.com/UCSD-ECEMAE-148/148sp26-spring-2026-final-project-team-4/main/docs/media/camera.png)
 
 __VESC and Electronics Mounting__
 
-__Side Cable Box__
+![image](https://raw.githubusercontent.com/UCSD-ECEMAE-148/148sp26-spring-2026-final-project-team-4/main/docs/media/electronics.png)
+
+__Full Assembly__
+
+![image](https://raw.githubusercontent.com/UCSD-ECEMAE-148/148sp26-spring-2026-final-project-team-4/main/docs/media/full_mount.png)
