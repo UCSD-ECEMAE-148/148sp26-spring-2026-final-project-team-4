@@ -9,7 +9,7 @@
 
 ## Team Members
 
-Evan Chou - ECE
+Evan Chou - ECE, Machine Learning and Controls
 
 Kenneth Foead - MAE
 
@@ -37,11 +37,13 @@ TBD
 - Successfully launched visual SLAM with an Extended Kalman Filter for robot localization
 - Integrated a web controller and dashboard for robot control via ROS 2 socket bridges
 - Configured IMU odometry firmware and ROS 2 driver for the Seeed XIAO nRF52840 Sense
-- Added rotational camera and LED strip features, and coded firmware for operating via serial commands
+- Added rotational camera and LED strip features, and coded firmware for operating them via serial commands
 
 ## Challenges
 
-TBD
+- Calibrating and finetuning parameters for EKF-related configurations, including VESC and IMU odometry
+- Hardware limitations with CPU and RAM power forced us to lower frequencies of data publishing and perform timed launching
+- Integrating Nav2 for autonomous navigation, which was not able to be accomplished during this time
 
 ## Final Project Videos
 
@@ -57,13 +59,13 @@ TBD
 
 ## Acknowledgements
 
-Special thanks to...
+Special thank you to Professor Silberman and TAs Jose Castillo and Winston Chou for facilitating this course!
 
 README.md Format, reference to [winter-2024-final-project-team-7](https://github.com/UCSD-ECEMAE-148/winter-2024-final-project-team-7)
 
 ## Contacts
 
 * Evan Chou - e3chou@ucsd.edu | evan.chou@live.com | [LinkedIn](https://www.linkedin.com/in/evanjchou/)
-* Kenneth Foead - 
-* Evan Robert - 
-* Thejo Tattala - 
+* Kenneth Foead - kfoead@ucsd.edu | | [LinkedIn](https://www.linkedin.com/in/kenneth-hubert-foead/)
+* Evan Robert - erobert@ucsd.edu
+* Thejo Tattala - ttattala@ucsd.edu | | [LinkedIn](https://www.linkedin.com/in/thejo-tattala-b719b2271/)

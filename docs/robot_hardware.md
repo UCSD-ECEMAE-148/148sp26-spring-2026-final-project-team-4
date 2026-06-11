@@ -17,10 +17,10 @@ __Parts List__
 
 *Additional Parts used for Final Project*
 
-* Raspberry Pi AI Hat
 * 35kg servo
 * Raspberry Pi Pico 2W
 * Seeed Studio XIAO nRF52840 Sense
+* Raspberry Pi AI Hat+ (not used)
 
 ## Mechanical Design Highlight
 
