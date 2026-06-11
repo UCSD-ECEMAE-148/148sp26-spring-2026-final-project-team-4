@@ -37,6 +37,7 @@
 #   ./stage1_start.sh              full stack; keyboard teleop in foreground
 #   ./stage1_start.sh --headless   start all nodes, skip interactive teleop
 #   ./stage1_start.sh --rviz       enable RViz on local display (Pi CPU warning)
+#   ./stage1_start.sh --full       headless + survey_camera launch + mission_report web server (nvm 20 / npm run dev)
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 WS="$SCRIPT_DIR/slam_ros2_ws"
@@ -44,11 +45,13 @@ WS="$SCRIPT_DIR/slam_ros2_ws"
 # ── Parse flags ────────────────────────────────────────────────────────────────
 HEADLESS=false
 USE_RVIZ=false
+FULL=false
 for arg in "$@"; do
     case "$arg" in
         --headless) HEADLESS=true ;;
         --rviz)     USE_RVIZ=true ;;
-        *) echo "Unknown flag: $arg  (valid: --headless, --rviz)"; exit 1 ;;
+        --full)     FULL=true; HEADLESS=true ;;
+        *) echo "Unknown flag: $arg  (valid: --headless, --rviz, --full)"; exit 1 ;;
     esac
 done
 
@@ -73,7 +76,7 @@ PIDS=()
 
 _ALL_NODES="ldlidar|serial_bridge_node|scan_relay_node|ekf_node|slam_toolbox|\
 robot_state_publisher|ackermann_to_vesc_node|vesc_driver_node|\
-keyboard_teleop_node|pico_hw_server|led_state_monitor"
+keyboard_teleop_node|pico_hw_server|led_state_monitor|survey_camera"
 
 cleanup() {
     echo ""
@@ -266,6 +269,10 @@ echo "    IMU    → /tmp/stage1_imu.log"
 echo "    SLAM   → /tmp/stage1_slam.log"
 echo "    VESC   → /tmp/stage1_vesc.log"
 echo "    LED    → /tmp/stage1_led.log"
+if [ "$FULL" = "true" ]; then
+echo "    Camera → /tmp/stage1_survey_camera.log"
+echo "    Web    → /tmp/stage1_mission_report.log"
+fi
 echo ""
 echo "  Verify map is building (~20 s after this script started):"
 echo "    ros2 service call /slam_toolbox/dynamic_map nav_msgs/srv/GetMap"
@@ -275,6 +282,23 @@ echo "    ros2 run nav2_map_server map_saver_cli \\"
 echo "      -f ~/scout-survey-rover/slam_ros2_ws/src/robot_slam/ros_data/maps/custom/stage1_map"
 echo -e "${CYN}════════════════════════════════════════════════════════════════${NC}"
 echo ""
+
+# ── [--full] Survey camera + mission report web server ────────────────────────
+if [ "$FULL" = "true" ]; then
+    log "[full] Starting survey camera..."
+    ros2 launch survey_camera survey_camera.launch.py \
+        > /tmp/stage1_survey_camera.log 2>&1 &
+    PIDS+=($!)
+    ok "survey_camera launched → /tmp/stage1_survey_camera.log"
+
+    log "[full] Starting mission report web server (nvm 20 / npm run dev)..."
+    # nvm is a shell function — must source nvm.sh before use.
+    bash -c 'source ~/.nvm/nvm.sh && nvm use 20 && cd "'"$SCRIPT_DIR/mission_report"'" && npm run dev' \
+        > /tmp/stage1_mission_report.log 2>&1 &
+    PIDS+=($!)
+    ok "mission_report dev server launched → /tmp/stage1_mission_report.log"
+    echo ""
+fi
 
 # ── Keyboard teleop or headless wait ─────────────────────────────────────────
 if [ "$HEADLESS" = "true" ]; then

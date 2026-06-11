@@ -19,7 +19,7 @@ Thejo Tattala - MAE
 
 ## Abstract
 
-TBD
+Our project aimed to develop a SLAM and autonomous navigation system capable of fusing multiple sensors for mapping a full indoor room and localizing the robot's position. With telemetry data and logging from the ROS 2 system, we also aimed to expose the robot through a web-based controller and dashboard for remote control, and to generate mission reports from its exploration data.
 
 ## What We Promised
 ### Must Have
@@ -47,13 +47,15 @@ TBD
 
 ## Final Project Videos
 
+[Final Presentation Slides](https://docs.google.com/presentation/d/100er0TgurMbT8JcgmrrsiwRIkXcWnn7BoJnauJ2WcTg/edit?usp=sharing)
+
 TBD
 
 ## Documentation
 
 - [Project Reproduction guide](docs/reproduction.md) if you are interested in reproducing our project.
 - [ROS 2 testing guide](docs/ros2_testing.md) for camera, IMU, LiDAR, and SLAM/RViz2 checks.
-- [Manual Stage 1 Logitech SLAM guide](docs/full_stage_testing.md) for joystick-driven mapping and room coverage.
+- [Stage 1 verification & troubleshooting reference](docs/full_stage_testing.md) for confirming the mapping stack is healthy, diagnosing failures, and saving maps. Launch the full stack with `./stage1_start.sh` (or `--full` to also start the survey camera and mission report web server).
 - [Software Systems documentation](docs/software_systems.md) for learning about our software architectures and systems.
 - [Robot Hardware documentation](docs/robot_hardware.md) for learning about our improved hardware components, including electrical and mechanical revamps.
 
