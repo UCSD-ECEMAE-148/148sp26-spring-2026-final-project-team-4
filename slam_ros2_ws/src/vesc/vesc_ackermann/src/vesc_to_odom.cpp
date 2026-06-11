@@ -99,7 +99,7 @@ void VescToOdom::vescStateCallback(const VescStateStamped::SharedPtr state)
   }
 
   // convert to engineering units
-  double current_speed = (-state->state.speed - speed_to_erpm_offset_) / speed_to_erpm_gain_;
+  double current_speed = (state->state.speed - speed_to_erpm_offset_) / speed_to_erpm_gain_;
   if (std::fabs(current_speed) < 0.05) {
     current_speed = 0.0;
   }
@@ -157,8 +157,12 @@ void VescToOdom::vescStateCallback(const VescStateStamped::SharedPtr state)
   odom.twist.twist.linear.y = 0.0;
   odom.twist.twist.angular.z = current_angular_velocity;
 
-  // Velocity uncertainty
-  /** @todo Think about velocity uncertainty */
+  // Velocity uncertainty.
+  // robot_localization treats a zero diagonal as "measurement absent" and skips
+  // the EKF update for that state — so vx must have a non-zero covariance or
+  // the EKF will never integrate forward position from VESC odometry.
+  odom.twist.covariance[0] = 0.05;   ///< vx   (m/s)^2  — wheel-slip + eRPM noise
+  odom.twist.covariance[35] = 0.1;   ///< vyaw (rad/s)^2 — Ackermann angular estimate
 
   if (publish_tf_) {
     TransformStamped tf;

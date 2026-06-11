@@ -1,36 +1,70 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Scout Survey Rover — Web Dashboard
 
-## Getting Started
+Browser-based mission control for the Scout Survey Rover. Provides live camera feed, manual WASD driving, inspection photo capture, and real-time SLAM map visualization.
 
-First, run the development server:
+## Stack
+
+- **Next.js 16** (React 19, TypeScript, Tailwind CSS v4)
+- **ROS 2 HTTP bridge** at port 8080 (`survey_camera/web_bridge_node.py`)
+
+## Running
+
+The dashboard depends on the ROS 2 stack being up. See the full launch sequence in [`docs/ros2_testing.md`](../docs/ros2_testing.md#5-web-dashboard).
+
+**Full launch (3 terminals):**
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# Terminal 1 — SLAM + VESC stack (--headless so keyboard teleop doesn't block the terminal)
+cd ~/scout-survey-rover && ./stage1_start.sh --headless
+
+# Terminal 2 — Camera + HTTP bridge
+source /opt/ros/jazzy/setup.bash && source ~/scout-survey-rover/slam_ros2_ws/install/setup.bash
+ros2 launch survey_camera survey_camera.launch.py
+
+# Terminal 3 — Web dashboard
+cd ~/scout-survey-rover/mission_report && npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Then open `http://<Pi-IP>:3000` in a browser. Find the Pi's IP with `hostname -I`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+> Requires Node.js ≥ 20. Run `node --version` to check.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## HTTP bridge endpoints (port 8080)
 
-## Learn More
+All served by `survey_camera/survey_camera/web_bridge_node.py`:
 
-To learn more about Next.js, take a look at the following resources:
+| Endpoint | Description |
+|----------|-------------|
+| `GET /video` | MJPEG stream from OAK-D camera |
+| `POST /capture` | Trigger inspection snapshot; saves to `public/captures/` |
+| `POST /drive` | Publish `{linear_x, angular_z}` Twist to `/key_vel` |
+| `GET /map_image` | Current SLAM map as PNG with robot dot (503 if no map yet) |
+| `GET /health` | Returns `OK` |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Keyboard controls
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Key | Action |
+|-----|--------|
+| `W` / `S` | Forward / Reverse |
+| `A` / `D` | Turn left / right |
+| `Space` | Emergency stop |
+| `J` / `L` | Pan camera left / right |
+| `K` | Center camera |
+| `Enter` | Take inspection photo |
 
-## Deploy on Vercel
+Drive keys are press-and-hold — the bridge repeats commands at 100 ms intervals to keep the ackermann mux (0.5 s timeout) from dropping them.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Captured images
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Saved to `public/captures/inspection_<timestamp>.jpg`.
+Accessible at `http://<Pi-IP>:3000/captures/<filename>` once the dev server is running.
+
+## Development
+
+```bash
+npm install        # first time only
+npm run dev        # hot-reload dev server on :3000
+npm run build      # production build
+npm start          # serve production build
+npx tsc --noEmit   # type-check without building
+```

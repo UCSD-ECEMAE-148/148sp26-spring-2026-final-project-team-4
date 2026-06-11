@@ -156,7 +156,7 @@ ros2 topic echo /tf_static --once | grep child_frame
 
 ```bash
 ros2 topic hz /scan_fixed          # expect ~10 Hz, 300 beams, ±125°
-ros2 topic hz /odometry/filtered   # expect 10 Hz (EKF output)
+ros2 topic hz /odometry/filtered   # expect 25 Hz (EKF output)
 ```
 
 **Map — use the service, not topic hz:**
@@ -286,7 +286,9 @@ Check all nodes are alive:
 ros2 node list
 ```
 
-Expected nodes for Stage 1: `/ld06_node`, `/serial_bridge_node`, `/scan_relay_node`, `/ekf_local_node`, `/robot_state_publisher`, `/slam_toolbox`.
+Expected nodes for Stage 1 (SLAM only): `/ld06_node`, `/serial_bridge_node`, `/scan_relay_node`, `/ekf_local_node`, `/robot_state_publisher`, `/slam_toolbox`.
+
+With web dashboard also running, add: `/survey_camera_node`, `/camera_web_bridge`.
 
 Check for errors:
 
@@ -300,6 +302,87 @@ If `ekf_node` is not found, the system-level `robot_localization` package is bei
 rm -rf ~/scout-survey-rover/slam_ros2_ws/build/robot_localization \
        ~/scout-survey-rover/slam_ros2_ws/install/robot_localization
 ```
+
+## 5. Web dashboard
+
+The web dashboard gives browser-based manual driving, live camera feed, inspection snapshot capture, and real-time SLAM map visualization.
+
+### Architecture
+
+```
+[OAK-D camera]  →  survey_camera_node  →  /survey_camera/image_raw
+                                                  ↓
+                                         camera_web_bridge ──────────────────── :8080
+                                                  │          /video   MJPEG stream
+                                                  │          /capture POST → /survey_camera/capture service
+                                                  │          /drive   POST → /key_vel Twist (priority 90 mux)
+                                                  │          /map_image GET → OccupancyGrid PNG + robot dot
+                                                  │
+[slam_toolbox]  →  /map (TRANSIENT_LOCAL) ────────┘
+[ekf_local]     →  map→base_link TF ─────────────┘
+
+[Next.js dashboard]  →  browser  →  :3000
+```
+
+### Terminal 1 — Full SLAM + VESC stack
+
+Use the `stage1_start.sh` script with `--headless` so the terminal stays free (the web dashboard drives the rover instead of keyboard teleop):
+
+```bash
+cd ~/scout-survey-rover
+./stage1_start.sh --headless
+```
+
+This starts, in order: Pico LED server, LiDAR, IMU bridge, SLAM stack (EKF + scan_relay + slam_toolbox), VESC driver. `slam_toolbox` activates ~17 s after the script starts.
+
+### Terminal 2 — Camera + web bridge
+
+```bash
+source /opt/ros/jazzy/setup.bash
+source ~/scout-survey-rover/slam_ros2_ws/install/setup.bash
+ros2 launch survey_camera survey_camera.launch.py
+```
+
+Verify:
+
+```bash
+ros2 topic hz /survey_camera/image_raw  # expect ~30 Hz
+curl http://localhost:8080/health        # should return OK
+```
+
+### Terminal 3 — Next.js dashboard
+
+```bash
+cd ~/scout-survey-rover/mission_report
+npm run dev
+```
+
+Then open **`http://<Pi-IP>:3000`** in a browser on any machine on the same network.
+Find the Pi's IP with `hostname -I`.
+
+> Note: `npm run dev` requires Node.js ≥ 20. Check with `node --version`.
+> If Node is too old, run the production build instead:
+> ```bash
+> npm run build && npm start
+> ```
+
+### Dashboard features
+
+| Feature | How it works |
+|---------|-------------|
+| **Live camera** | MJPEG stream from OAK-D at `:8080/video` |
+| **Take Picture (Enter)** | `POST :8080/capture` → ROS Trigger service → saves to `mission_report/public/captures/` |
+| **WASD driving** | Keyboard or on-screen buttons → `POST :8080/drive` → `/key_vel` Twist → ackermann mux |
+| **Space / Stop** | Emergency stop — clears all keys, publishes zero Twist |
+| **Live SLAM map** | `GET :8080/map_image` polled every 500 ms — OccupancyGrid rendered as PNG with robot pose dot |
+
+Drive speeds: `0.3 m/s` linear, `0.6 rad/s` angular. Held keys repeat at 100 ms to keep the mux alive (mux drops commands after 0.5 s).
+
+The bridge URL is derived from `window.location.hostname` automatically, so the dashboard works identically whether you browse from the Pi itself or remotely.
+
+### Captured images
+
+Photos are saved to `mission_report/public/captures/inspection_<timestamp>.jpg` and are directly accessible at `http://<Pi-IP>:3000/captures/<filename>`.
 
 ## 6. What is intentionally out of scope here
 

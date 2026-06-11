@@ -23,6 +23,10 @@ _X, _Y, _THETA = 8, 9, 10
 _VX, _VTHETA = 11, 12
 _EXPECTED_FIELDS = 13
 
+# Collect this many gyro samples at startup before declaring bias calibrated.
+# 500 ticks × 20 ms = 10 s — robot must be stationary during this window.
+_GYRO_CAL_SAMPLES = 500
+
 _POSE_COV = [0.0] * 36
 _POSE_COV[0] = 0.05   # x
 _POSE_COV[7] = 0.05   # y
@@ -58,9 +62,17 @@ class SerialBridgeNode(Node):
         self._serial_thread = threading.Thread(target=self._read_serial, daemon=True)
         self._serial_thread.start()
 
+        self._gyro_bias = (0.0, 0.0, 0.0)
+        self._cal_buf: list[tuple[float, float, float]] = []
+        self._calibrated = False
+
         # 50 Hz timer — matches firmware output rate
         self.create_timer(0.02, self._publish_cb)
         self.get_logger().info(f'serial_bridge_node started on {self._port}')
+        self.get_logger().info(
+            f'Gyro bias calibration: keep robot still for '
+            f'{_GYRO_CAL_SAMPLES / 50:.0f} s after first serial packet'
+        )
 
     def _find_xiao_port(self):
         from serial.tools import list_ports
@@ -161,24 +173,6 @@ class SerialBridgeNode(Node):
         odom.twist.covariance = _TWIST_COV
         self._odom_pub.publish(odom)
 
-        imu_msg = Imu()
-        imu_msg.header.stamp = now
-        imu_msg.header.frame_id = self._base_frame
-        imu_msg.linear_acceleration.x = fields[_AX]
-        imu_msg.linear_acceleration.y = fields[_AY]
-        imu_msg.linear_acceleration.z = fields[_AZ]
-        imu_msg.angular_velocity.x = fields[_GX]
-        imu_msg.angular_velocity.y = fields[_GY]
-        imu_msg.angular_velocity.z = fields[_GZ]
-        imu_msg.orientation.z = qz
-        imu_msg.orientation.w = qw
-        imu_msg.orientation_covariance[8] = 0.02
-        imu_msg.angular_velocity_covariance[8] = 0.01
-        imu_msg.linear_acceleration_covariance[0] = 0.1
-        imu_msg.linear_acceleration_covariance[4] = 0.1
-        imu_msg.linear_acceleration_covariance[8] = 0.1
-        self._imu_pub.publish(imu_msg)
-
         if self._publish_tf:
             t = TransformStamped()
             t.header.stamp = now
@@ -189,6 +183,50 @@ class SerialBridgeNode(Node):
             t.transform.rotation.z = qz
             t.transform.rotation.w = qw
             self._tf_broadcaster.sendTransform(t)
+
+        gx, gy, gz = fields[_GX], fields[_GY], fields[_GZ]
+
+        if not self._calibrated:
+            self._cal_buf.append((gx, gy, gz))
+            remaining = _GYRO_CAL_SAMPLES - len(self._cal_buf)
+            if remaining > 0 and remaining % 50 == 0:
+                self.get_logger().info(
+                    f'Gyro calibration: {remaining // 50} s remaining — keep robot still'
+                )
+            if len(self._cal_buf) >= _GYRO_CAL_SAMPLES:
+                n = len(self._cal_buf)
+                bx = sum(s[0] for s in self._cal_buf) / n
+                by = sum(s[1] for s in self._cal_buf) / n
+                bz = sum(s[2] for s in self._cal_buf) / n
+                self._gyro_bias = (bx, by, bz)
+                self._calibrated = True
+                self._cal_buf.clear()
+                self.get_logger().info(
+                    f'Gyro bias calibrated — '
+                    f'x:{bx:+.5f}  y:{by:+.5f}  z:{bz:+.5f} rad/s'
+                )
+            # Hold off on publishing /imu until calibration is done so the EKF
+            # never sees the biased gyro values.
+            return
+
+        bx, by, bz = self._gyro_bias
+        imu_msg = Imu()
+        imu_msg.header.stamp = now
+        imu_msg.header.frame_id = self._base_frame
+        imu_msg.linear_acceleration.x = fields[_AX]
+        imu_msg.linear_acceleration.y = fields[_AY]
+        imu_msg.linear_acceleration.z = fields[_AZ]
+        imu_msg.angular_velocity.x = gx - bx
+        imu_msg.angular_velocity.y = gy - by
+        imu_msg.angular_velocity.z = gz - bz
+        imu_msg.orientation.z = qz
+        imu_msg.orientation.w = qw
+        imu_msg.orientation_covariance[8] = 0.02
+        imu_msg.angular_velocity_covariance[8] = 0.01
+        imu_msg.linear_acceleration_covariance[0] = 0.1
+        imu_msg.linear_acceleration_covariance[4] = 0.1
+        imu_msg.linear_acceleration_covariance[8] = 0.1
+        self._imu_pub.publish(imu_msg)
 
 
 def main(args=None):

@@ -1,128 +1,206 @@
-"use client";
-
+import fs from "fs";
+import path from "path";
 import Link from "next/link";
+import PrintButton from "./PrintButton";
+
+export const dynamic = "force-dynamic"; // always read live filesystem, never cache
+
+// ------------------------------------------------------------------ //
+// Data helpers (server-side)                                          //
+// ------------------------------------------------------------------ //
+
+function getCaptureImages(): string[] {
+  const dir = path.join(process.cwd(), "public", "captures");
+  try {
+    return fs
+      .readdirSync(dir)
+      .filter((f) => /\.(jpg|jpeg|png)$/i.test(f))
+      .sort();
+  } catch {
+    return [];
+  }
+}
+
+function parseTimestamp(filename: string): Date | null {
+  const m = filename.match(
+    /inspection_(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})(\d{2})/
+  );
+  if (!m) return null;
+  return new Date(`${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}:${m[6]}`);
+}
+
+function formatTimestamp(filename: string): string {
+  const d = parseTimestamp(filename);
+  if (!d) return "—";
+  return d.toLocaleString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  });
+}
+
+function formatDuration(seconds: number): string {
+  const m = Math.floor(seconds / 60)
+    .toString()
+    .padStart(2, "0");
+  const s = (seconds % 60).toString().padStart(2, "0");
+  return `${m}:${s}`;
+}
+
+// ------------------------------------------------------------------ //
+// Page (server component)                                             //
+// ------------------------------------------------------------------ //
 
 export default function ReportPage() {
-  const mission = {
-    name: "Scout Survey Mission",
-    robot: "Scout Survey Rover",
-    mode: "Manual SLAM Survey",
-    driveControl: "Keyboard Teleoperation",
-    cameraControl: "Pico-Controlled Servo",
-    startTime: "00:00",
-    duration: "03:42",
-    result: "Survey Completed",
-  };
+  const images = getCaptureImages();
+  const mapSnapshotExists = fs.existsSync(
+    path.join(process.cwd(), "public", "map_snapshot.png")
+  );
 
-  const cameraImages = [
-    {
-      fileName: "inspection_001.jpg",
-      timeTaken: "00:48",
-    },
-    {
-      fileName: "inspection_002.jpg",
-      timeTaken: "01:36",
-    },
-    {
-      fileName: "inspection_003.jpg",
-      timeTaken: "02:14",
-    },
-  ];
+  // Derive timing from captured image filenames
+  const firstTs = images.length > 0 ? parseTimestamp(images[0]) : null;
+  const lastTs =
+    images.length > 0 ? parseTimestamp(images[images.length - 1]) : null;
+
+  const startTime = firstTs
+    ? firstTs.toLocaleString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,
+      })
+    : "—";
+
+  const duration =
+    firstTs && lastTs
+      ? formatDuration(
+          Math.round((lastTs.getTime() - firstTs.getTime()) / 1000)
+        )
+      : "—";
+
+  // Build event log from real captures
+  const captureEvents = images.map(
+    (f) => `[${formatTimestamp(f)}] Inspection photo captured: ${f}`
+  );
 
   const events = [
-    "[00:00] Dashboard initialized",
-    "[00:03] Robot connected",
-    "[00:07] Camera servo centered",
-    "[00:12] LiDAR stream active",
-    "[00:25] SLAM mapping started",
-    "[00:48] Camera image captured: inspection_001.jpg",
-    "[01:36] Camera image captured: inspection_002.jpg",
-    "[02:14] Camera image captured: inspection_003.jpg",
-    "[03:42] Survey completed",
+    "[—] Dashboard initialized",
+    "[—] SLAM mapping started",
+    ...captureEvents,
+    images.length > 0 ? `[${formatTimestamp(images[images.length - 1])}] Survey completed` : "[—] No captures yet",
   ];
 
   return (
     <main className="min-h-screen bg-white p-8 text-black">
+      {/* Toolbar */}
       <div className="mb-8 flex items-center justify-between print:hidden">
         <Link href="/" className="rounded-lg border px-4 py-2 hover:bg-slate-100">
-          Back to Dashboard
+          ← Back to Dashboard
         </Link>
-
-        <button
-          onClick={() => window.print()}
-          className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-500"
-        >
-          Save as PDF
-        </button>
+        <PrintButton />
       </div>
 
       <h1 className="mb-2 text-4xl font-bold">Mission Report</h1>
-
       <p className="mb-8 text-slate-600">
         Manual SLAM Mapping and Camera Inspection Platform
       </p>
 
+      {/* Mission Info */}
       <section className="mb-8">
         <h2 className="mb-4 text-2xl font-semibold">Mission Information</h2>
-
         <div className="grid grid-cols-2 gap-4">
-          <InfoItem label="Mission Name" value={mission.name} />
-          <InfoItem label="Robot" value={mission.robot} />
-          <InfoItem label="Mode" value={mission.mode} />
-          <InfoItem label="Drive Control" value={mission.driveControl} />
-          <InfoItem label="Camera Control" value={mission.cameraControl} />
-          <InfoItem label="Start Time" value={mission.startTime} />
-          <InfoItem label="Duration" value={mission.duration} />
-          <InfoItem label="Result" value={mission.result} />
+          <InfoItem label="Mission Name" value="Scout Survey Mission" />
+          <InfoItem label="Robot" value="Scout Survey Rover" />
+          <InfoItem label="Mode" value="Manual SLAM Survey" />
+          <InfoItem label="Drive Control" value="Web Dashboard (WASD)" />
+          <InfoItem label="Camera Control" value="Pico-Controlled Servo" />
+          <InfoItem label="Start Time" value={startTime} />
+          <InfoItem label="Duration (first→last capture)" value={duration} />
+          <InfoItem
+            label="Captures"
+            value={images.length > 0 ? `${images.length} photo${images.length !== 1 ? "s" : ""}` : "None"}
+          />
         </div>
       </section>
 
+      {/* Summary */}
       <section className="mb-8">
         <h2 className="mb-4 text-2xl font-semibold">Mission Summary</h2>
-
         <p className="text-slate-700">
           The Scout Survey Rover was manually driven through the survey area
-          using keyboard teleoperation. During the mission, LiDAR and odometry
-          data were used to generate a live SLAM map. The OAK-D-Lite camera and
-          Pico-controlled servo were used to capture inspection images during the
-          survey.
+          using the web dashboard WASD controls. During the mission, LiDAR and
+          odometry data were fused by the EKF and processed by SLAM Toolbox to
+          generate a live occupancy map. The OAK-D-Lite camera and
+          Pico-controlled servo were used to capture{" "}
+          {images.length > 0 ? `${images.length} inspection image${images.length !== 1 ? "s" : ""}` : "inspection images"}{" "}
+          during the survey.
         </p>
       </section>
 
+      {/* SLAM Map */}
       <section className="mb-8">
         <h2 className="mb-4 text-2xl font-semibold">Generated SLAM Map</h2>
-
-        <div className="flex h-80 items-center justify-center rounded-lg border bg-slate-100">
-          SLAM Map Snapshot
-        </div>
+        {mapSnapshotExists ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src="/map_snapshot.png"
+            alt="SLAM Map Snapshot"
+            className="max-h-96 rounded-lg border object-contain"
+          />
+        ) : (
+          <div className="flex h-80 items-center justify-center rounded-lg border bg-slate-100 text-slate-500">
+            No map snapshot saved yet — click &quot;Generate Report&quot; on the dashboard
+            while SLAM is running to save one.
+          </div>
+        )}
       </section>
 
+      {/* Captured Images */}
       <section className="mb-8">
-        <h2 className="mb-4 text-2xl font-semibold">Captured Camera Images</h2>
-
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          {cameraImages.map((image) => (
-            <CameraImageCard
-              key={image.fileName}
-              fileName={image.fileName}
-              timeTaken={image.timeTaken}
-            />
-          ))}
-        </div>
+        <h2 className="mb-4 text-2xl font-semibold">
+          Captured Camera Images{" "}
+          {images.length > 0 && (
+            <span className="text-lg font-normal text-slate-500">
+              ({images.length})
+            </span>
+          )}
+        </h2>
+        {images.length === 0 ? (
+          <p className="text-slate-500">
+            No captures yet. Press Enter (or the Take Picture button) on the
+            dashboard to capture inspection images.
+          </p>
+        ) : (
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            {images.map((filename) => (
+              <CaptureCard key={filename} filename={filename} />
+            ))}
+          </div>
+        )}
       </section>
 
+      {/* Event Log */}
       <section>
         <h2 className="mb-4 text-2xl font-semibold">Mission Event Log</h2>
-
-        <ul className="list-disc pl-6">
-          {events.map((event, index) => (
-            <li key={index}>{event}</li>
+        <ul className="list-disc pl-6 space-y-1">
+          {events.map((event, i) => (
+            <li key={i} className="text-slate-700">
+              {event}
+            </li>
           ))}
         </ul>
       </section>
     </main>
   );
 }
+
+// ------------------------------------------------------------------ //
+// Sub-components                                                      //
+// ------------------------------------------------------------------ //
 
 function InfoItem({ label, value }: { label: string; value: string }) {
   return (
@@ -133,21 +211,17 @@ function InfoItem({ label, value }: { label: string; value: string }) {
   );
 }
 
-function CameraImageCard({
-  fileName,
-  timeTaken,
-}: {
-  fileName: string;
-  timeTaken: string;
-}) {
+function CaptureCard({ filename }: { filename: string }) {
   return (
-    <div className="rounded-lg border bg-slate-100 p-4">
-      <div className="mb-3 flex h-40 items-center justify-center rounded bg-white text-slate-400">
-        Camera Image
-      </div>
-
-      <p className="font-semibold">{fileName}</p>
-      <p className="text-sm text-slate-500">Time taken: {timeTaken}</p>
+    <div className="rounded-lg border bg-slate-50 p-4">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={`/captures/${filename}`}
+        alt={filename}
+        className="mb-3 h-40 w-full rounded object-cover"
+      />
+      <p className="font-semibold text-sm break-all">{filename}</p>
+      <p className="text-sm text-slate-500">{formatTimestamp(filename)}</p>
     </div>
   );
 }

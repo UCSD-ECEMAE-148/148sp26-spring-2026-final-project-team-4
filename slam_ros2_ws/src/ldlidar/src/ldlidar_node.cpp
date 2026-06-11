@@ -55,7 +55,7 @@ LD06::LD06()
   }
 
   loop_timer_ = this->create_wall_timer(
-    100ms, 
+    33ms,
     std::bind(&LD06::publishLoop, this)
   );
 }

@@ -1,7 +1,7 @@
 # config/ekf_local.yaml
 ekf_local_node:
   ros__parameters:
-    frequency: 10.0
+    frequency: 25.0
     sensor_timeout: 0.3
     two_d_mode: true          # planar robot, ignore roll/pitch/z
     publish_tf: true
@@ -28,15 +28,43 @@ ekf_local_node:
                    false, false, false]
     odom1_differential: false
 
-    # IMU — differential mode prevents accumulated yaw (hundreds of radians) entering the filter
+    # IMU — differential mode converts consecutive quaternions into delta-yaw,
+    # which is the XIAO's onboard-filtered orientation. We do NOT also fuse
+    # angular_velocity.z because:
+    #   (a) it double-injects the same gyro bias both paths see, and
+    #   (b) the XIAO reports angular_velocity.z ≈ 0.014 rad/s at rest (~0.8°/s
+    #       phantom rotation), which is better averaged out via the quaternion
+    #       path than injected directly every tick.
+    # Roll/pitch are excluded — irrelevant in two_d_mode and their vibration
+    # deltas would corrupt the yaw estimate.
     imu0: /imu
     imu0_config: [false, false, false,   # x, y, z position
-                  true,  true,  true,    # roll, pitch, yaw (differential — change only)
+                  false, false, true,    # roll, pitch, yaw (yaw differential only)
                   false, false, false,   # vx, vy, vz
-                  true,  true,  true,    # vroll, vpitch, vyaw
+                  false, false, false,   # vroll, vpitch, vyaw (skip — biased gyro)
                   false, false, false]   # ax, ay, az
     imu0_differential: true
     imu0_remove_gravitational_acceleration: true
+
+    # Process noise covariance (15x15 diagonal).
+    # States: x, y, z, roll, pitch, yaw, vx, vy, vz, vroll, vpitch, vyaw, ax, ay, az
+    # Without this, robot_localization uses library defaults that are too stiff,
+    # causing it to over-weight noisy IMU measurements.
+    process_noise_covariance: [0.05,  0.0,   0.0,   0.0,   0.0,   0.0,   0.0,    0.0,    0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,
+                               0.0,   0.05,  0.0,   0.0,   0.0,   0.0,   0.0,    0.0,    0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,
+                               0.0,   0.0,   0.06,  0.0,   0.0,   0.0,   0.0,    0.0,    0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,
+                               0.0,   0.0,   0.0,   0.03,  0.0,   0.0,   0.0,    0.0,    0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,
+                               0.0,   0.0,   0.0,   0.0,   0.03,  0.0,   0.0,    0.0,    0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,
+                               0.0,   0.0,   0.0,   0.0,   0.0,   0.06,  0.0,    0.0,    0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,
+                               0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.025,  0.0,    0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,
+                               0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,    0.025,  0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,
+                               0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,    0.0,    0.04,  0.0,   0.0,   0.0,   0.0,   0.0,   0.0,
+                               0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,    0.0,    0.0,   0.01,  0.0,   0.0,   0.0,   0.0,   0.0,
+                               0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,    0.0,    0.0,   0.0,   0.01,  0.0,   0.0,   0.0,   0.0,
+                               0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,    0.0,    0.0,   0.0,   0.0,   0.02,  0.0,   0.0,   0.0,
+                               0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,    0.0,    0.0,   0.0,   0.0,   0.0,   0.01,  0.0,   0.0,
+                               0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,    0.0,    0.0,   0.0,   0.0,   0.0,   0.0,   0.01,  0.0,
+                               0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,    0.0,    0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.015]
 
     use_control: true
     stamped_control: false

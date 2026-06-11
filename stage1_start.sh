@@ -7,7 +7,7 @@
 #   LiDAR (LD06)           /dev/ldlidar       → /scan         (~10 Hz)
 #   IMU bridge (XIAO)      /dev/ttyACM0       → /odom + /imu  (~50 Hz)
 #   scan_relay_node        (inside SLAM launch) → /scan_fixed  (300 beams, 250° FOV)
-#   ekf_local_node         (inside SLAM launch) → odom→base_link TF (10 Hz)
+#   ekf_local_node         (inside SLAM launch) → odom→base_link TF (25 Hz)
 #   robot_state_publisher  (inside SLAM launch) → static TFs
 #   slam_toolbox           (inside SLAM launch, +10 s delay) → /map
 #   ackermann_to_vesc_node (inside VESC launch) → /commands/motor + /commands/servo
@@ -171,7 +171,12 @@ fi
 
 # ── [2/5] IMU bridge (XIAO nRF52840 Sense) ───────────────────────────────────
 log "[2/5] Starting IMU bridge (XIAO nRF52840)..."
+# publish_tf:=false — the EKF owns odom→base_link TF exclusively.
+# If the serial bridge also publishes it (default: true) it wins at 50 Hz and
+# overwrites the EKF's position with near-zero accel dead-reckoning, making
+# slam_toolbox think the robot never moves.
 ros2 run xiao_serial_bridge serial_bridge_node \
+    --ros-args -p publish_tf:=false \
     > /tmp/stage1_imu.log 2>&1 &
 PIDS+=($!)
 sleep 4
