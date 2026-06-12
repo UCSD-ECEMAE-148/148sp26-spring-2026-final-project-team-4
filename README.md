@@ -53,9 +53,13 @@ Our project aimed to develop a SLAM and autonomous navigation system capable of 
 
 ## Final Project Videos
 
-[Final Presentation Slides](https://docs.google.com/presentation/d/100er0TgurMbT8JcgmrrsiwRIkXcWnn7BoJnauJ2WcTg/edit?usp=sharing)
+*Click the thumbnails to open the media.*
 
-[Demo Video](https://drive.google.com/file/d/1kE3kcbYyW5jzt6wzRNw6U-6pjJctakA8/view?usp=sharing)
+### Final Presentation Slides
+[<img src="docs\media\presentation.jpg" width="300">](https://docs.google.com/presentation/d/100er0TgurMbT8JcgmrrsiwRIkXcWnn7BoJnauJ2WcTg/edit?usp=sharing)
+
+### Demo Video
+[<img src="docs\media\video.jpg" width="300">](https://drive.google.com/file/d/1kE3kcbYyW5jzt6wzRNw6U-6pjJctakA8/view?usp=sharing)
 
 <hr>
 
@@ -80,6 +84,6 @@ README.md Format, reference to [winter-2024-final-project-team-7](https://github
 ## Contacts
 
 * Evan Chou - e3chou@ucsd.edu | evan.chou@live.com | [LinkedIn](https://www.linkedin.com/in/evanjchou/)
-* Kenneth Foead - kfoead@ucsd.edu | | [LinkedIn](https://www.linkedin.com/in/kenneth-hubert-foead/)
+* Kenneth Foead - kfoead@ucsd.edu | [LinkedIn](https://www.linkedin.com/in/kenneth-hubert-foead/)
 * Evan Robert - erobert@ucsd.edu
-* Thejo Tattala - ttattala@ucsd.edu | | [LinkedIn](https://www.linkedin.com/in/thejo-tattala-b719b2271/)
+* Thejo Tattala - ttattala@ucsd.edu | [LinkedIn](https://www.linkedin.com/in/thejo-tattala-b719b2271/)
